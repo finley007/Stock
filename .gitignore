@@ -1,0 +1,8 @@
+data/
+finley/.DS_Store
+finley/__pycache__/
+finley/factor/__pycache__/
+finley/report/
+finley/workspace.code-workspace
+log/
+temp/
