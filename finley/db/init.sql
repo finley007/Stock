@@ -143,6 +143,7 @@ insert into factor_case values ('MeanInflectionPoint_10_20210101_20211214','Mean
 insert into factor_case values ('KDJRegression_9_20210101_20211226','KDJRegression','9','20210101','20211226');
 insert into factor_case values ('RSIPenetration_14_20210101_20211226','RSIPenetration','14','20210101','20211226');
 insert into factor_case values ('DRFPenetration_0.3_20210101_20211231','DRFPenetration','0.3','20210101','20211231');
+insert into factor_case values ('WRRegression_30_20210101_20220113','WRRegression','30','20210101','20220114');
 
 insert into learning_model values ('1', '{"training_set":[{"ts_code":"000858.SZ","start_date":"20190701","end_date":"20200310"}],"profit_period":"5","pre_process":[],"algorithm":"LinearRegression"}', '震荡行情');
 insert into learning_model values ('2', '{"training_set":[{"ts_code":"000858.SZ","start_date":"20200325","end_date":"20210105"}],"profit_period":"5","pre_process":[],"algorithm":"LinearRegression"}', '攀升行情');

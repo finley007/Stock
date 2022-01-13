@@ -538,6 +538,18 @@ class DRF(Indicator):
         data['DRF'] = (data['BP'] + data['SP'])/(2*(data['high'] - data['low'])) 
         data['DRF.' + str(self._params[0])] = data['DRF'].ewm(alpha=self._params[0], adjust = False).mean()
         return data
+    
+#WR
+class WR(Indicator):
+    
+    def __init__(self, params):
+        self._params = params
+        
+    def enrich(self, data):
+        data['high.'+str(self._params[0])] = data['high'].rolling(self._params[0]).max()
+        data['low.'+str(self._params[0])] = data['low'].rolling(self._params[0]).min()
+        data['WR'] = 100*(data['high.'+str(self._params[0])] - data['close'])/(data['high.'+str(self._params[0])] - data['low.'+str(self._params[0])]) 
+        return data
   
 if __name__ == '__main__':
     data = FileUtils.get_file_by_ts_code('000651.SZ', True)
@@ -570,9 +582,11 @@ if __name__ == '__main__':
     # data = indicator.enrich(data)
     # indicator = KDJ([9])
     # data = indicator.enrich(data)
-    indicator = DRF([0.3])
+    # indicator = DRF([0.3])
+    # data = indicator.enrich(data)
+    indicator = WR([30])
     data = indicator.enrich(data)
     data['index_trade_date'] = pd.to_datetime(data['trade_date'])
     data = data.set_index(['index_trade_date'])
-    draw_analysis_curve(data[data['trade_date'] > '20210917'], volume = False, show_signal = True, signal_keys = ['DRF','DRF.0.3'])
+    draw_analysis_curve(data[data['trade_date'] > '20210917'], volume = False, show_signal = True, signal_keys = ['WR'])
     print("aa")

@@ -7,7 +7,7 @@ ray.init()
 
 from factor.my_factor import LowerHatch
 from factor.trend_factor import MeanInflectionPoint, MeanTrend, MeanPenetration
-from factor.momentum_factor import KDJRegression, RSIPenetration
+from factor.momentum_factor import KDJRegression, RSIPenetration, DRFPenetration
 from persistence import DaoMysqlImpl, FileUtils
 from analysis import correlation_analysis, select_stock, retro_select_stock
 from visualization import draw_histogram
@@ -73,8 +73,8 @@ def run_select_stock(factor):
     select_stock(factor)
     
 @run_with_timecost      
-def run_retro_select_stock(factor, create_date):
-    retro_select_stock(factor, create_date)
+def run_retro_select_stock(factor_list, create_date):
+    retro_select_stock(factor_list, create_date)
         
         
 if __name__ == '__main__':
@@ -82,7 +82,7 @@ if __name__ == '__main__':
     # 相关性分析
     # do_correlation_analysis()
     # 单一因子模拟
-    # run_single_factor_simulation('factor.momentum_factor', 'DRFPenetration_0.3_20210101_20211231')
+    run_single_factor_simulation('factor.momentum_factor', 'WRRegression_30_20210101_20220113')
     # 复合因子模拟
     # factor_list = []
     # factor_list.append(MeanPenetration([20]))
@@ -93,5 +93,6 @@ if __name__ == '__main__':
     # factor2 = RSIPenetration([14])
     # data = select_stock([factor1, factor2])
     # 复盘
-    # factor = MeanInflectionPoint([20])
-    # data = run_retro_select_stock(factor, '20211214')
+    # factor1 = KDJRegression([9])
+    # factor2 = RSIPenetration([14])
+    # data = run_retro_select_stock([factor1, factor2], '20211231')

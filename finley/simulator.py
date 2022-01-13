@@ -84,22 +84,28 @@ def simulate(factor, data, start_date = '', end_date = '', save = True):
         else:
             data = data[(data['trade_date'] >= start_date) & (data['trade_date'] <= end_date)]
         data.loc[:,'action'] = data.apply(lambda item:factor.get_action_mapping(item),axis=1)
-        action_list = data[data['action'] != 0]
+        buy_action_list = data[data['action'] == 1]
+        sell_action_list = data[data['action'] == -1]
         current_action = None
         action_records = []
-        for action in action_list.iterrows():
-            if (current_action == None and action[1]['action'] == 1):
+        for action in buy_action_list.iterrows():
+            factor_date = action[1]['trade_date']
+            # 如果开仓时间比当前平仓时间小则跳过
+            if (current_action != None and factor_date <= current_action.get_close_date()):
+                continue
+            #当天出现交易信号第2天交易
+            trade_date = dao.get_next_business_date(factor_date)
+            signal_delay = factor.get_signal_delay()
+            while(signal_delay > 1):
+                trade_date = dao.get_next_business_date(trade_date)
+                signal_delay = signal_delay - 1
+            if (not data[data['trade_date'] == trade_date].empty):
+                current_action = Action(trade_date, data[data['trade_date'] == trade_date]['open'], data) 
+            for action in sell_action_list.iterrows():
                 factor_date = action[1]['trade_date']
-                #当天出现交易信号第2天交易
-                trade_date = dao.get_next_business_date(factor_date)
-                signal_delay = factor.get_signal_delay()
-                while(signal_delay > 1):
-                    trade_date = dao.get_next_business_date(trade_date)
-                    signal_delay = signal_delay - 1
-                if (not data[data['trade_date'] == trade_date].empty):
-                    current_action = Action(trade_date, data[data['trade_date'] == trade_date]['open'], data) 
-            if (current_action != None and action[1]['action'] == -1):
-                factor_date = action[1]['trade_date']
+                #招开仓日子后的第一个平仓信号
+                if (factor_date <= current_action.get_open_date()):
+                    continue
                 trade_date = dao.get_next_business_date(factor_date)
                 signal_delay = factor.get_signal_delay()
                 while(signal_delay > 1):
@@ -108,8 +114,11 @@ def simulate(factor, data, start_date = '', end_date = '', save = True):
                 if (not data[data['trade_date'] == trade_date].empty):
                     current_action.set_close_date(trade_date, data)
                     current_action.set_close_price(data[data['trade_date'] == trade_date]['low'])
-                    action_records.append(current_action)
-                    current_action = None
+            if (current_action.get_close_date() == '' and not data[data['trade_date'] == end_date].empty):
+                current_action.set_close_date(end_date, data)
+                current_action.set_close_price(data[data['trade_date'] == end_date]['low'])
+            if (current_action.get_close_date() != ''):
+                action_records.append(current_action)
         print_simulate_result(factor, data, action_records, start_date, end_date, factor.get_version(), save)
         
 def print_simulate_result(factor, data, action_records, start_date, end_date, version, save = True):

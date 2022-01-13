@@ -15,7 +15,7 @@ from persistence import DaoMysqlImpl, FileUtils
 from visualization import draw_histogram
 from filter import PriceFilter, STFilter, PERatioFilter, NewStockFilter
 from factor.trend_factor import MeanTrend, EnvelopePenetration_Keltner, AdvanceEnvelopePenetration_Keltner, MeanPenetration, MeanInflectionPoint
-from factor.momentum_factor import KDJRegression, RSIPenetration, DRFPenetration
+from factor.momentum_factor import KDJRegression, RSIPenetration, DRFPenetration, WRRegression
 from machinelearning import MachineLearn, CompoundFactor, TrainingModel
 
 def _ts_code_transform(orignal_str): 
@@ -86,11 +86,17 @@ def select_stock(factor_list, stock_list = [], save_result = True, open_link = T
             for stock in score_matrix.itertuples(): 
                 new_ts_code = _ts_code_transform(getattr(stock,'ts_code'))
                 link = Template(constants.STOCK_INFO_LINK).safe_substitute(ts_code = new_ts_code)
-                item = (anaylysis_id, '_'.join(factor_code_list), getattr(stock,'score'), '_'.join(map(lambda x: str(x.get_params()[0]), factor_list)), getattr(stock,'ts_code'), link, last_business_date,'','','','','')
+                item = (anaylysis_id, create_factor_code(factor_list), getattr(stock,'score'), create_factor_params(factor_list), getattr(stock,'ts_code'), link, last_business_date,'','','','','')
                 persistence.insert('insert into analysis_result values (REPLACE(UUID(),"-",""),%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)', [item])
             if (open_link):
                 open_selected_stocks_link(anaylysis_id)
         return score_matrix
+    
+def create_factor_code(factor_list):
+    return '_'.join(map(lambda x: str(x.get_factor_code()), factor_list))
+                    
+def create_factor_params(factor_list):
+    return '_'.join(map(lambda x: str(x.get_params()[0]), factor_list))
  
 # 打开选股结果
 def open_selected_stocks_link(anlysis_id):
@@ -101,11 +107,11 @@ def open_selected_stocks_link(anlysis_id):
             open_url(link[0])
 
 # 复盘
-def retro_select_stock(factor, create_date):
+def retro_select_stock(factor_list, create_date):
     persistence = DaoMysqlImpl()
-    result_list = persistence.select("select * from analysis_result where factor_code = '" + factor.get_factor_code() + "' and param_value = '" + str(factor.get_params()[0]) + "' and create_date = '" + create_date + "'")
+    result_list = persistence.select("select * from analysis_result where factor_code = '" + create_factor_code(factor_list) + "' and param_value = '" + create_factor_params(factor_list) + "' and create_date = '" + create_date + "'")
     for result in result_list:
-        ts_code = result[4]
+        ts_code = result[5]
         data = FileUtils.get_file_by_ts_code(ts_code)
         tgt_data = data[data['trade_date'] >= create_date]
         for index in range(5):
@@ -115,8 +121,8 @@ def retro_select_stock(factor, create_date):
             ret = tgt_data[tgt_data['trade_date'] == create_date]['ret' + str(-(index + 1))]
             ret = ret.iloc[0] if not np.isnan(ret.iloc[0]) else ''
             list.append(ret)
-        list.append(factor.get_factor_code())
-        list.append(factor.get_params()[0])
+        list.append(create_factor_code(factor_list))
+        list.append(create_factor_params(factor_list))
         list.append(ts_code)
         list.append(create_date)
         persistence.update('update analysis_result set 1st_day_ret = %s, 2nd_day_ret = %s, 3rd_day_ret = %s, 4th_day_ret = %s, 5th_day_ret = %s where factor_code = %s and param_value = %s and ts_code = %s and create_date = %s', tuple(list))
@@ -255,7 +261,8 @@ if __name__ == '__main__':
     # factor = AdvanceEnvelopePenetration_Keltner([20])
     # factor = KDJRegression([9])
     # factor = RSIPenetration([14])
-    factor = DRFPenetration([0.3])
+    # factor = DRFPenetration([0.3])
+    factor = WRRegression([30])
     # factor_list = []
     # factor_list.append(MeanPenetration([20]))
     # factor_list.append(MeanTrend([20]))
