@@ -30,11 +30,14 @@ def run_with_timecost(func):
         return result
     return fun
 
-def to_number(str):
+def to_params(str):
+    if (str.find("|") != -1):
+        params = list(map(lambda str: int(str), str.split("|")))
+        return params
     try:
-        return int(str)
+        return [int(str)]
     except ValueError:
-        return float(str)
+        return [float(str)]
         
 
 @run_with_timecost
@@ -50,4 +53,7 @@ if __name__ == '__main__':
     # print(create_instance('sklearn.linear_model', 'LinearRegression'))
     # print(get_current_time() > '00:00:00' and get_current_time() < '15:00:00')
     # f1()
-    open_url('https://finance.sina.com.cn/realstock/company/sh603611/nc.shtml')
+    # open_url('https://finance.sina.com.cn/realstock/company/sh603611/nc.shtml')
+    print(to_params('25'))
+    print(to_params('25.45'))
+    print(to_params('25|24|23'))

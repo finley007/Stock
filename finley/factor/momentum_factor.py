@@ -8,7 +8,7 @@ parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0,parentdir) 
 from persistence import FileUtils
 from visualization import draw_analysis_curve
-from indicator import MACD, MovingAverage, DIEnvelope, RSI, KDJ, DRF, WR
+from indicator import MACD, MovingAverage, DIEnvelope, RSI, KDJ, DRF, WR, UO
 from simulator import simulate 
 from factor.base_factor import Factor
 
@@ -168,26 +168,53 @@ class WRRegression(Factor):
         #突破上限卖出
         data.loc[(data['WR.' + str(self._params[0])].shift(1) < self._high_limit) & (data['WR.' + str(self._params[0])] > self._high_limit), self._factor_code] = 100
         return data 
+    
+# UO突破
+class UOPenetration(Factor):
+    
+    _high_limit = 70
+    _low_limit = 35
+    
+    def __init__(self, params):
+        self._params = params
+        self._factor_code = 'uo_penetration'
+        self._version = '1.0'
+    
+    def caculate(self, data):
+        indicator = UO(self._params)
+        data = indicator.enrich(data)
+        #只取穿透点
+        data[self._factor_code] = 0
+        #向上突破70买入
+        data.loc[(data['UO'].shift(1) < self._high_limit) & (data['UO'] > self._high_limit), self._factor_code] = 100
+        #向下回调70卖出
+        data.loc[(data['UO'].shift(1) > self._high_limit) & (data['UO'] < self._high_limit), self._factor_code] = -100
+        #向下突破35买入
+        data.loc[(data['UO'].shift(1) > self._low_limit) & (data['UO'] < self._low_limit), self._factor_code] = 100
+        #向上回调35买入
+        data.loc[(data['UO'].shift(1) < self._low_limit) & (data['UO'] > self._low_limit), self._factor_code] = -100
+        return data 
      
 if __name__ == '__main__':
     #图像分析
-    data = FileUtils.get_file_by_ts_code('002667.SZ', is_reversion = True)
+    data = FileUtils.get_file_by_ts_code('002531.SZ', is_reversion = True)
     # # factor = MACDPenetration([])
     # # factor = MomentumPenetration([20])
     # factor = MomentumRegression([10])
     # # factor = DiscreteIndex([10, 40])
     # factor = KDJRegression([9])
     # factor = DRFPenetration([0.3])
-    factor = WRRegression([30])
+    # factor = WRRegression([30])
+    factor = UOPenetration([7, 14, 28])
     data = factor.caculate(data)
     data['index_trade_date'] = pd.to_datetime(data['trade_date'])
     data = data.set_index(['index_trade_date'])
-    draw_analysis_curve(data[(data['trade_date'] <= '20211231') & (data['trade_date'] > '20210101')], volume = False, show_signal = True, signal_keys = ['WR.30','wr_regression'])
+    draw_analysis_curve(data[(data['trade_date'] <= '20211231') & (data['trade_date'] > '20210101')], volume = False, show_signal = True, signal_keys = ['UO','uo_penetration'])
     print('aa')
     print(factor.score(data))
     
     #模拟
-    # data = FileUtils.get_file_by_ts_code('002667.SZ', is_reversion = False)
+    # data = FileUtils.get_file_by_ts_code('002531.SZ', is_reversion = False)
     # # factor = LowerHatch([5])
     # # factor = MeanInflectionPoint([20])
     # # factor = MeanPenetration([20])
@@ -196,7 +223,8 @@ if __name__ == '__main__':
     # # factor = MACDPenetration([])
     # # factor = KDJRegression([9])
     # # factor = DRFPenetration([0.3])
-    # factor = WRRegression([10])
+    # # factor = WRRegression([10])
+    # factor = UOPenetration([7, 14, 28])
     # simulate(factor, data, start_date = '20210101', save = False)
     
     #计算两个因子相关性

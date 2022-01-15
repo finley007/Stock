@@ -550,6 +550,40 @@ class WR(Indicator):
         data['low.'+str(self._params[0])] = data['low'].rolling(self._params[0]).min()
         data['WR'] = 100*(data['high.'+str(self._params[0])] - data['close'])/(data['high.'+str(self._params[0])] - data['low.'+str(self._params[0])]) 
         return data
+    
+#UO   
+class UO(Indicator):
+    
+    def __init__(self, params):
+        self._params = params
+        
+    def enrich(self, data):
+        data['last_close'] = data['close'].shift(1)
+        data['TL'] = data.apply(lambda x : min(x['last_close'], x['low']), axis=1)
+        data['BP'] = data['close'] - data['TL']
+        data['TR'] = data.apply(lambda x : max(x['last_close'], x['high']), axis=1) - data['TL']
+        data['avg.'+str(self._params[0])] = data['BP'].rolling(self._params[0]).sum()/data['TR'].rolling(self._params[0]).sum()
+        data['avg.'+str(self._params[1])] = data['BP'].rolling(self._params[1]).sum()/data['TR'].rolling(self._params[1]).sum()
+        data['avg.'+str(self._params[2])] = data['BP'].rolling(self._params[2]).sum()/data['TR'].rolling(self._params[2]).sum()
+        data['UO'] = 100*(4*data['avg.'+str(self._params[0])]+2*data['avg.'+str(self._params[1])]+data['avg.'+str(self._params[1])])/7
+        return data
+    
+#RVI
+class RVI(Indicator):
+    
+    def __init__(self, params):
+        self._params = params
+        
+    def enrich(self, data):
+        data['CO'] = data['open'] - data['close']
+        data['HL'] = data['high'] - data['low']
+        data['V1'] = (data['CO'] + 2*data['CO'].shift(1) + 2*data['CO'].shift(2)+ data['CO'].shift(3))/6
+        data['V2'] = (data['HL'] + 2*data['HL'].shift(1) + 2*data['HL'].shift(2)+ data['HL'].shift(3))/6
+        data['S1'] = data['V1'].rolling(self._params[0]).sum()
+        data['S2'] = data['V2'].rolling(self._params[0]).sum()
+        data['RVI.'+str(self._params[0])] = data['S1']/data['S2']
+        data['RVIS.'+str(self._params[0])] = (data['RVI.'+str(self._params[0])] + 2*data['RVI.'+str(self._params[0])].shift(1) + 2*data['RVI.'+str(self._params[0])].shift(2)+ data['RVI.'+str(self._params[0])].shift(3))/6
+        return data  
   
 if __name__ == '__main__':
     data = FileUtils.get_file_by_ts_code('000651.SZ', True)
@@ -584,9 +618,11 @@ if __name__ == '__main__':
     # data = indicator.enrich(data)
     # indicator = DRF([0.3])
     # data = indicator.enrich(data)
-    indicator = WR([30])
+    # indicator = WR([30])
+    # data = indicator.enrich(data)
+    indicator = UO([7,14,28])
     data = indicator.enrich(data)
     data['index_trade_date'] = pd.to_datetime(data['trade_date'])
     data = data.set_index(['index_trade_date'])
-    draw_analysis_curve(data[data['trade_date'] > '20210917'], volume = False, show_signal = True, signal_keys = ['WR'])
+    draw_analysis_curve(data[data['trade_date'] > '20210917'], volume = False, show_signal = True, signal_keys = ['UO'])
     print("aa")

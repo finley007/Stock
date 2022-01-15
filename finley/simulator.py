@@ -101,6 +101,8 @@ def simulate(factor, data, start_date = '', end_date = '', save = True):
                 signal_delay = signal_delay - 1
             if (not data[data['trade_date'] == trade_date].empty):
                 current_action = Action(trade_date, data[data['trade_date'] == trade_date]['open'], data) 
+            else:
+                continue
             for action in sell_action_list.iterrows():
                 factor_date = action[1]['trade_date']
                 #招开仓日子后的第一个平仓信号

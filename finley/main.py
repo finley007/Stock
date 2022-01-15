@@ -15,7 +15,7 @@ from synchronization import incremental_synchronize_stock_daily_data, synchroniz
 from simulator import simulate 
 from machinelearning import MachineLearn, CompoundFactor, TrainingModel
 from log import log_info
-from tools import run_with_timecost, create_instance, to_number
+from tools import run_with_timecost, create_instance, to_params
 from validator import validate_data_integrity
 
 
@@ -51,7 +51,7 @@ def do_correlation_analysis():
 def run_single_factor_simulation(package, factor_case_code):
     persistence = DaoMysqlImpl()
     factor_case = persistence.select("select * from factor_case where id = '" + factor_case_code + "'")
-    factor = create_instance(package, factor_case[0][1], [to_number(factor_case[0][2])])
+    factor = create_instance(package, factor_case[0][1], to_params(factor_case[0][2]))
     stock_list = persistence.select("select ts_code from static_stock_list")
     for stock in stock_list:
         data = FileUtils.get_file_by_ts_code(stock[0], is_reversion = True)
@@ -78,11 +78,11 @@ def run_retro_select_stock(factor_list, create_date):
         
         
 if __name__ == '__main__':
-    pre_check()
+    # pre_check()
     # 相关性分析
     # do_correlation_analysis()
     # 单一因子模拟
-    run_single_factor_simulation('factor.momentum_factor', 'WRRegression_30_20210101_20220113')
+    run_single_factor_simulation('factor.momentum_factor', 'UOPenetration_7|14|28_20210101_20220114')
     # 复合因子模拟
     # factor_list = []
     # factor_list.append(MeanPenetration([20]))

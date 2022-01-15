@@ -15,7 +15,7 @@ from persistence import DaoMysqlImpl, FileUtils
 from visualization import draw_histogram
 from filter import PriceFilter, STFilter, PERatioFilter, NewStockFilter
 from factor.trend_factor import MeanTrend, EnvelopePenetration_Keltner, AdvanceEnvelopePenetration_Keltner, MeanPenetration, MeanInflectionPoint
-from factor.momentum_factor import KDJRegression, RSIPenetration, DRFPenetration, WRRegression
+from factor.momentum_factor import KDJRegression, RSIPenetration, DRFPenetration, WRRegression, UOPenetration
 from machinelearning import MachineLearn, CompoundFactor, TrainingModel
 
 def _ts_code_transform(orignal_str): 
@@ -262,7 +262,8 @@ if __name__ == '__main__':
     # factor = KDJRegression([9])
     # factor = RSIPenetration([14])
     # factor = DRFPenetration([0.3])
-    factor = WRRegression([30])
+    # factor = WRRegression([30])
+    factor = UOPenetration([7,14,28])
     # factor_list = []
     # factor_list.append(MeanPenetration([20]))
     # factor_list.append(MeanTrend([20]))

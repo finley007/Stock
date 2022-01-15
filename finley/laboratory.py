@@ -71,6 +71,12 @@ def test_circular_backtracking():
         if (not has_backtrack and fruits[index] == 'apple'):
             index = index - 1
             has_backtrack = True
+            
+def test_parse_str():
+    str = "1|2|3"
+    if (str.find("|") != -1):
+        params = list(map(lambda str: int(str), str.split("|")))
+        print(params)
     
     
 if __name__ == '__main__':
@@ -80,4 +86,5 @@ if __name__ == '__main__':
     # test_multi_dimensional_array()
     # test_traversal_array()
     # test_list_2_string()
-    test_circular_backtracking()
+    # test_circular_backtracking()
+    test_parse_str()
