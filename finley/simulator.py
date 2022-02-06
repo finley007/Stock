@@ -3,6 +3,7 @@
 
 import tools
 import uuid
+import ray
 
 from persistence import DaoMysqlImpl
 
@@ -20,8 +21,9 @@ class Action(object):
     
     def __init__(self, open_date, open_price, data):
         self._open_date = open_date
-        self._open_price = open_price.iloc[0]
+        self._open_price = open_price
         self._stop_loss_price = self._open_price * self._stop_loss_rate
+        #已开仓价计算止损日
         filter_data = data.loc[(data['trade_date'] > self._open_date) & (data['low'] <= self._stop_loss_price)].sort_values(by='trade_date')
         if (len(filter_data) > 0):
             self._stop_loss_date = filter_data.iloc[0]['trade_date']
@@ -70,6 +72,7 @@ class Action(object):
     def get_profit_rate(self):
         return (self.get_close_price() - self.get_open_price())/self.get_open_price()
 
+# @ray.remote
 def simulate(factor, data, start_date = '', end_date = '', save = True):
         if (len(data) <= 30):
             print("Sub-new stock, will be ignore for simulation")
@@ -100,7 +103,7 @@ def simulate(factor, data, start_date = '', end_date = '', save = True):
                 trade_date = dao.get_next_business_date(trade_date)
                 signal_delay = signal_delay - 1
             if (not data[data['trade_date'] == trade_date].empty):
-                current_action = Action(trade_date, data[data['trade_date'] == trade_date]['open'], data) 
+                current_action = Action(trade_date, data[data['trade_date'] == trade_date]['open'].iloc[0], data) 
             else:
                 continue
             for action in sell_action_list.iterrows():

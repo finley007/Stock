@@ -575,7 +575,7 @@ class RVI(Indicator):
         self._params = params
         
     def enrich(self, data):
-        data['CO'] = data['open'] - data['close']
+        data['CO'] = data['close'] - data['open']
         data['HL'] = data['high'] - data['low']
         data['V1'] = (data['CO'] + 2*data['CO'].shift(1) + 2*data['CO'].shift(2)+ data['CO'].shift(3))/6
         data['V2'] = (data['HL'] + 2*data['HL'].shift(1) + 2*data['HL'].shift(2)+ data['HL'].shift(3))/6
@@ -583,10 +583,38 @@ class RVI(Indicator):
         data['S2'] = data['V2'].rolling(self._params[0]).sum()
         data['RVI.'+str(self._params[0])] = data['S1']/data['S2']
         data['RVIS.'+str(self._params[0])] = (data['RVI.'+str(self._params[0])] + 2*data['RVI.'+str(self._params[0])].shift(1) + 2*data['RVI.'+str(self._params[0])].shift(2)+ data['RVI.'+str(self._params[0])].shift(3))/6
-        return data  
+        return data 
+    
+#TSI
+class TSI(Indicator):
+    
+    def __init__(self, params):
+        self._params = params
+        
+    def enrich(self, data):
+        data['delta'] = data['close'] - data['close'].shift(1)
+        data['delta_abs'] = data.apply(lambda x : abs(x['delta']), axis=1)
+        data['delta_mean'] = data['delta'].ewm(span=self._params[0]).mean()
+        data['delta_abs_mean'] = data['delta_abs'].ewm(span=self._params[0]).mean()
+        data['TSI.'+str(self._params[0])+'.'+str(self._params[1])] = 100*data['delta_mean'].ewm(span=self._params[1]).mean()/data['delta_abs_mean'].ewm(span=self._params[1]).mean()
+        return data   
+    
+#SO Strength Oscillator
+class SO(Indicator):
+    
+    def __init__(self, params):
+        self._params = params
+        
+    def enrich(self, data):
+        data['delta'] = (data['close'] - data['close'].shift(1))
+        data['delta_mean'] = data['delta'].rolling(self._params[0]).mean()
+        data['amp'] = (data['high'] - data['low'])
+        data['amp_mean'] = data['amp'].rolling(self._params[0]).mean()
+        data['SO.'+str(self._params[0])] = data['delta_mean']/data['amp_mean']
+        return data 
   
 if __name__ == '__main__':
-    data = FileUtils.get_file_by_ts_code('000651.SZ', True)
+    data = FileUtils.get_file_by_ts_code('002531.SZ', True)
     # data = data.iloc[::-1]
     # indicator = MovingAverage([20])
     # data = indicator.enrich(data)
@@ -620,9 +648,13 @@ if __name__ == '__main__':
     # data = indicator.enrich(data)
     # indicator = WR([30])
     # data = indicator.enrich(data)
-    indicator = UO([7,14,28])
+    # indicator = UO([7,14,28])
+    # data = indicator.enrich(data)
+    # indicator = TSI([25,13])
+    # data = indicator.enrich(data)
+    indicator = SO([10])
     data = indicator.enrich(data)
     data['index_trade_date'] = pd.to_datetime(data['trade_date'])
     data = data.set_index(['index_trade_date'])
-    draw_analysis_curve(data[data['trade_date'] > '20210917'], volume = False, show_signal = True, signal_keys = ['UO'])
+    draw_analysis_curve(data[data['trade_date'] > '20210101'], volume = False, show_signal = True, signal_keys = ['SO.10'])
     print("aa")

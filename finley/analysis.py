@@ -17,6 +17,8 @@ from filter import PriceFilter, STFilter, PERatioFilter, NewStockFilter
 from factor.trend_factor import MeanTrend, EnvelopePenetration_Keltner, AdvanceEnvelopePenetration_Keltner, MeanPenetration, MeanInflectionPoint
 from factor.momentum_factor import KDJRegression, RSIPenetration, DRFPenetration, WRRegression, UOPenetration
 from machinelearning import MachineLearn, CompoundFactor, TrainingModel
+from simulator import Action
+from datasource import TushareDatasource
 
 def _ts_code_transform(orignal_str): 
     return orignal_str.split('.')[1].lower() + orignal_str.split('.')[0]
@@ -91,6 +93,35 @@ def select_stock(factor_list, stock_list = [], save_result = True, open_link = T
             if (open_link):
                 open_selected_stocks_link(anaylysis_id)
         return score_matrix
+    
+# 平仓判断
+@run_with_timecost
+def position_analysis(factor, ts_code, open_date, open_price, volume, is_reversion = True):
+    persistence = DaoMysqlImpl()
+    last_business_date = persistence.get_last_business_date()
+    data = FileUtils.get_file_by_ts_code(ts_code, True)
+    if (len(data) > 0):
+        datasource = TushareDatasource()
+        data = factor.caculate(data)
+        data.loc[:,'action'] = data.apply(lambda item:factor.get_action_mapping(item),axis=1)
+        data = data[data['trade_date'] >= str(open_date)]
+        reverse_factor = datasource.reverse_factor(ts_code, open_date)
+        # 买入价格复权
+        open_price = (float)(open_price) * reverse_factor['adj_factor'].iloc[0]
+        action = Action(open_date, open_price, data) 
+        sell_action_list = data[data['action'] == -1]
+        close_date = last_business_date
+        if (len(sell_action_list) > 0):
+            close_date = sell_action_list[0]
+        action.set_close_date(close_date, data)
+        action.set_close_price(data[data['trade_date'] == close_date]['low'])
+        print('+++++++++++++++++++++')
+        print(action.get_open_date() + '-' + action.get_close_date())
+        print(str(action.get_open_price()) + '-' + str(action.get_close_price()))
+        profit = (action.get_close_price() - action.get_open_price()) * (float)(volume)
+        profit_rate = profit/(action.get_open_price() * (float)(volume))
+        print('利润：' + str(profit))
+        print('利润率：' + str(profit_rate))
     
 def create_factor_code(factor_list):
     return '_'.join(map(lambda x: str(x.get_factor_code()), factor_list))
@@ -263,7 +294,7 @@ if __name__ == '__main__':
     # factor = RSIPenetration([14])
     # factor = DRFPenetration([0.3])
     # factor = WRRegression([30])
-    factor = UOPenetration([7,14,28])
+    # factor = UOPenetration([7,14,28])
     # factor_list = []
     # factor_list.append(MeanPenetration([20]))
     # factor_list.append(MeanTrend([20]))
@@ -279,8 +310,8 @@ if __name__ == '__main__':
     # 生成全部股票相关性分析结果
     # correlation_analysis_all_stocks(factor)
     # 相关性分析结果统计
-    correlation_analysis_report(factor)
+    # correlation_analysis_report(factor)
     # 因子相关性分析
     # factor_correlation_analysis(factor1, factor2)
-    # open_selected_stocks_link('test')
+    open_selected_stocks_link('e3ef1e0e-7d2b-11ec-ac22-acde4800')
     

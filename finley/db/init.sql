@@ -129,6 +129,24 @@ create_date   VARCHAR(8),
 unique(factor_code1, param_value1, factor_code2, param_value2, ts_code, create_date)
 );
 
+--transation_record
+CREATE TABLE IF NOT EXISTS transation_record
+(
+id VARCHAR(32),
+ts_code       VARCHAR(10),
+volume        INT,
+buy_price    DECIMAL(10,2),
+buy_date     VARCHAR(8),
+sell_price   DECIMAL(10,2),
+sell_date     VARCHAR(8),
+factor_code VARCHAR(128),
+factor_value  VARCHAR(20),
+param_value  VARCHAR(10),
+profit DECIMAL(10,2),
+profit_rate DECIMAL(10,2),
+PRIMARY KEY(id)
+);
+
 insert into factor_case values ('MeanInflectionPoint_5_20210101_20210929','MeanInflectionPoint','5','20210101','20210929');
 insert into factor_case values ('MeanInflectionPoint_20_20210101_20211111','MeanInflectionPoint','20','20210101','20211111');
 insert into factor_case values ('MeanPenetration_20_20210101_20210929','MeanPenetration','20','20210101','20210929');
@@ -145,15 +163,16 @@ insert into factor_case values ('RSIPenetration_14_20210101_20211226','RSIPenetr
 insert into factor_case values ('DRFPenetration_0.3_20210101_20211231','DRFPenetration','0.3','20210101','20211231');
 insert into factor_case values ('WRRegression_30_20210101_20220113','WRRegression','30','20210101','20220114');
 insert into factor_case values ('UOPenetration_7|14|28_20210101_20220114','UOPenetration','7|14|28','20210101','20220114');
+insert into factor_case values ('RVIPenetration_10_20210101_20220117','RVIPenetration','10','20210101','20220117');
 
 insert into learning_model values ('1', '{"training_set":[{"ts_code":"000858.SZ","start_date":"20190701","end_date":"20200310"}],"profit_period":"5","pre_process":[],"algorithm":"LinearRegression"}', '震荡行情');
 insert into learning_model values ('2', '{"training_set":[{"ts_code":"000858.SZ","start_date":"20200325","end_date":"20210105"}],"profit_period":"5","pre_process":[],"algorithm":"LinearRegression"}', '攀升行情');
 insert into learning_model values ('3', '{"training_set":[{"ts_code":"000858.SZ","start_date":"20200525","end_date":"20210901"}],"profit_period":"5","pre_process":[],"algorithm":"LinearRegression"}', '下降行情');
 
 select distinct factor_case from simulation_result;
-select count(*) from simulation_result where factor_case = 'uo_penetration_7_20210101_20220114' and profit_rate > 0 and version = '1.0';
-select count(*) from simulation_result where factor_case = 'uo_penetration_7_20210101_20220114' and profit_rate < 0 and version = '1.0';
-select ts_code, profit_rate from simulation_result where factor_case = 'uo_penetration_7_20210101_20220114' and profit_rate > 0 and version = '1.0' order by profit_rate desc;
-select ts_code, profit_rate from simulation_result where factor_case = 'uo_penetration_7_20210101_20220114' and profit_rate < 0 and version = '1.0' order by profit_rate desc;
-select avg(profit_rate) from simulation_result where factor_case = 'uo_penetration_7_20210101_20220114' and version = '1.0';
-delete from simulation_result where factor_case = 'uo_penetration_7_20210101_20220114';
+select count(*) from simulation_result where factor_case = 'rvi_penetration_10_20210101_20220114' and profit_rate > 0 and version = '1.0';
+select count(*) from simulation_result where factor_case = 'rvi_penetration_10_20210101_20220114' and profit_rate < 0 and version = '1.0';
+select ts_code, profit_rate from simulation_result where factor_case = 'rvi_penetration_10_20210101_20220114' and profit_rate > 0 and version = '1.0' order by profit_rate desc;
+select ts_code, profit_rate from simulation_result where factor_case = 'rvi_penetration_10_20210101_20220114' and profit_rate < 0 and version = '1.0' order by profit_rate desc;
+select avg(profit_rate) from simulation_result where factor_case = 'rvi_penetration_10_20210101_20220114' and version = '1.0';
+delete from simulation_result where factor_case = 'rvi_penetration_10_20210101_20220114';

@@ -4,6 +4,7 @@
 import datetime
 import time
 import webbrowser
+import inspect
 
 def get_current_date():
     return datetime.datetime.now().strftime('%Y%m%d')
@@ -21,6 +22,14 @@ def create_instance(module_name, class_name, *args, **kwargs):
     class_meta = getattr(module_meta, class_name)
     obj = class_meta(*args, **kwargs)
     return obj
+
+def get_all_class(module_name):
+    class_list = []
+    module = __import__(module_name)
+    for package_name, package in inspect.getmembers(module, inspect.ismodule):
+        for class_name, clz in inspect.getmembers(package, inspect.isclass):
+            class_list.append(clz)
+    return class_list
 
 def run_with_timecost(func):
     def fun(*args, **kwargs):
@@ -54,6 +63,7 @@ if __name__ == '__main__':
     # print(get_current_time() > '00:00:00' and get_current_time() < '15:00:00')
     # f1()
     # open_url('https://finance.sina.com.cn/realstock/company/sh603611/nc.shtml')
-    print(to_params('25'))
-    print(to_params('25.45'))
-    print(to_params('25|24|23'))
+    # print(to_params('25'))
+    # print(to_params('25.45'))
+    # print(to_params('25|24|23'))
+    get_all_class('factor.momentum_factor')
