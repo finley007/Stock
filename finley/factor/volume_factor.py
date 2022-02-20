@@ -38,18 +38,18 @@ class FIPenetration(Factor):
      
 if __name__ == '__main__':
     #图像分析
-    data = FileUtils.get_file_by_ts_code('600438.SH', is_reversion = True)
-    factor = FIPenetration([10])
+    data = FileUtils.get_file_by_ts_code('600260.SH', is_reversion = True)
+    factor = FIPenetration([13])
     data = factor.caculate(data)
     data['index_trade_date'] = pd.to_datetime(data['trade_date'])
     data = data.set_index(['index_trade_date'])
-    draw_analysis_curve(data[(data['trade_date'] <= '20220215') & (data['trade_date'] > '20210101')], volume = False, show_signal = True, signal_keys = ['SO.10','so_penetration'])
+    draw_analysis_curve(data[(data['trade_date'] <= '20210801') & (data['trade_date'] > '20210701')], volume = False, show_signal = True, signal_keys = ['fi.13','fi_penetration'])
     print('aa')
     
     #模拟
-    # data = FileUtils.get_file_by_ts_code('002531.SZ', is_reversion = False)
-    # factor = RVIPenetration([10])
-    # simulate(factor, data, start_date = '20210101', save = False)
+    # data = FileUtils.get_file_by_ts_code('600260.SH', is_reversion = True)
+    # factor = FIPenetration([13])
+    # simulate(factor, data, '20210101', save = False)
     
     #计算两个因子相关性
     # data = FileUtils.get_file_by_ts_code('600256.SH', is_reversion = True)

@@ -57,7 +57,8 @@ def run_single_factor_simulation(package, factor_case_code):
     stock_list = persistence.select("select ts_code from static_stock_list")
     for stock in stock_list:
         data = FileUtils.get_file_by_ts_code(stock[0], is_reversion = True)
-        simulate(factor, data, factor_case[0][3])
+        simulate.remote(factor, data, factor_case[0][3])
+    time.sleep(300)
   
 @run_with_timecost      
 def run_compound_factor_simulation(factor_list, model_id, start_date, ret_period = 5):
