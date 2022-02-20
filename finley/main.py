@@ -96,11 +96,11 @@ def run_retro_select_stock(factor_list, create_date):
         
         
 if __name__ == '__main__':
-    # pre_check()
+    pre_check()
     # 相关性分析
     # do_correlation_analysis()
     # 单一因子模拟
-    # run_single_factor_simulation('factor.momentum_factor', 'RVIPenetration_10_20210101_20220117')
+    run_single_factor_simulation('factor.volume_factor', 'FIPenetration_13_20210101_2022217')
     # 复合因子模拟
     # factor_list = []
     # factor_list.append(MeanPenetration([20]))
@@ -117,4 +117,4 @@ if __name__ == '__main__':
     # factor2 = RSIPenetration([14])
     # data = run_retro_select_stock([factor1, factor2], '20211231')
     # 持股分析
-    run_position_analysis('factor.momentum_factor')
+    # run_position_analysis('factor.momentum_factor')

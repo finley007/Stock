@@ -3,6 +3,7 @@
 
 from abc import ABCMeta, abstractclassmethod
 import pandas as pd
+import numpy as np
 import sys
 
 import constants
@@ -612,9 +613,73 @@ class SO(Indicator):
         data['amp_mean'] = data['amp'].rolling(self._params[0]).mean()
         data['SO.'+str(self._params[0])] = data['delta_mean']/data['amp_mean']
         return data 
+    
+    
+#ADX
+class ADX(Indicator):
+    
+    def __init__(self, params):
+        self._params = params
+        
+    def enrich(self, data):
+        data['delta_high'] = data['high'] - data['high'].shift(1)
+        data['delta_low'] = data['low'].shift(1) - data['low']
+        data.loc[((data['delta_high'] < 0) & (data['delta_low'] < 0)) | (data['delta_high'] == data['delta_low']), 'DM+'] = 0
+        data.loc[((data['delta_high'] < 0) & (data['delta_low'] < 0)) | (data['delta_high'] == data['delta_low']), 'DM-'] = 0
+        data.loc[(data['delta_high'] > data['delta_low']), 'DM+'] = data['delta_high']
+        data.loc[(data['delta_high'] > data['delta_low']), 'DM-'] = 0
+        data.loc[(data['delta_high'] < data['delta_low']), 'DM+'] = 0
+        data.loc[(data['delta_high'] < data['delta_low']), 'DM-'] = data['delta_low']
+        indicator = ATR(self._params)
+        indicator.enrich(data)
+        data['DM+.'+str(self._params[0])] = data['DM+'].ewm(span=self._params[0], adjust=False).mean()
+        data['DM-.'+str(self._params[0])] = data['DM-'].ewm(span=self._params[0], adjust=False).mean()
+        data['atr.'+str(self._params[0])] = data['atr'].ewm(span=self._params[0], adjust=False).mean()
+        data['DI+.'+str(self._params[0])] = data['DM+.'+str(self._params[0])]/data['atr.'+str(self._params[0])]
+        data['DI-.'+str(self._params[0])] = data['DM-.'+str(self._params[0])]/data['atr.'+str(self._params[0])]
+        data['DI.SUM.'+str(self._params[0])] = data['DI+.'+str(self._params[0])] + data['DI-.'+str(self._params[0])]
+        data['DI.SUB.'+str(self._params[0])] = abs(data['DI+.'+str(self._params[0])] - data['DI-.'+str(self._params[0])])
+        data['DX.'+str(self._params[0])] = (data['DI.SUB.'+str(self._params[0])] * 100)/data['DI.SUM.'+str(self._params[0])]
+        return data 
+    
+    
+#强力指标
+class FI(Indicator):
+    
+    def __init__(self, params):
+        self._params = params
+        
+    def enrich(self, data):
+        data['fi'] = (data['close'] - data['close'].shift(1)) * data['vol']
+        data['fi.'+str(self._params[0])] = data['fi'].ewm(span=self._params[0], adjust=False).mean()
+        return data 
+    
+#能量潮指标
+class OBV(Indicator):
+    
+    def __init__(self, params):
+        self._params = params
+        
+    def enrich(self, data):
+        data['last_close'] = data['close'].shift(1)
+        data['sign'] = data.apply(lambda x : self.get_trend_indicator(x), axis=1)
+        data['signed_vol'] = data['sign'] * data['vol']
+        signed_vol = np.array(data['signed_vol'])
+        obv = np.cumsum(signed_vol)
+        data['obv'] = obv
+        return data
+        
+    def get_trend_indicator(self, x):
+        if (x['close'] > x['last_close']): 
+            return 1
+        if (x['close'] < x['last_close']):
+            return -1
+        return 0
+    
+    
   
 if __name__ == '__main__':
-    data = FileUtils.get_file_by_ts_code('002531.SZ', True)
+    data = FileUtils.get_file_by_ts_code('600438.SH', True)
     # data = data.iloc[::-1]
     # indicator = MovingAverage([20])
     # data = indicator.enrich(data)
@@ -652,9 +717,16 @@ if __name__ == '__main__':
     # data = indicator.enrich(data)
     # indicator = TSI([25,13])
     # data = indicator.enrich(data)
-    indicator = SO([10])
+    # indicator = SO([10])
+    # data = indicator.enrich(data)
+    # indicator = ADX([14])
+    # data = indicator.enrich(data)
+    # indicator = FI([13])
+    # data = indicator.enrich(data)
+    indicator = OBV([])
     data = indicator.enrich(data)
     data['index_trade_date'] = pd.to_datetime(data['trade_date'])
     data = data.set_index(['index_trade_date'])
-    draw_analysis_curve(data[data['trade_date'] > '20210101'], volume = False, show_signal = True, signal_keys = ['SO.10'])
+    data['volume'] = data['vol']
+    draw_analysis_curve(data[data['trade_date'] > '20210723'], volume = True, show_signal = True, signal_keys = ['obv'])
     print("aa")
