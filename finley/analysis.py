@@ -14,9 +14,10 @@ from tools import run_with_timecost, get_current_date, open_url
 from persistence import DaoMysqlImpl, FileUtils
 from visualization import draw_histogram
 from filter import PriceFilter, STFilter, PERatioFilter, NewStockFilter
+from factor.base_factor import Factor
 from factor.trend_factor import MeanTrend, EnvelopePenetration_Keltner, AdvanceEnvelopePenetration_Keltner, MeanPenetration, MeanInflectionPoint
 from factor.momentum_factor import KDJRegression, RSIPenetration, DRFPenetration, WRRegression, UOPenetration
-from factor.volume_factor import FIPenetration
+from factor.volume_factor import FIPenetration, MFIPenetration
 from machinelearning import MachineLearn, CompoundFactor, TrainingModel
 from simulator import Action
 from datasource import TushareDatasource
@@ -175,7 +176,7 @@ def correlation_analysis_all_stocks(factor, stock_list = [], save_result = True)
 # 相关性分析  
 def correlation_analysis(factor, data, periods = range(1, 11), low_threshold = 0, high_threshold = 0, save_result = False):
     for period in periods:
-        factor.caculate_ret(data, period)
+        Factor.caculate_ret(data, period)
     data = factor.caculate(data)
     data = data.dropna()
     if (low_threshold > 0):
@@ -296,7 +297,8 @@ if __name__ == '__main__':
     # factor = DRFPenetration([0.3])
     # factor = WRRegression([30])
     # factor = UOPenetration([7,14,28])
-    factor = FIPenetration([13])
+    # factor = FIPenetration([13])
+    factor = MFIPenetration([14])
     # factor_list = []
     # factor_list.append(MeanPenetration([20]))
     # factor_list.append(MeanTrend([20]))
@@ -315,5 +317,6 @@ if __name__ == '__main__':
     correlation_analysis_report(factor)
     # 因子相关性分析
     # factor_correlation_analysis(factor1, factor2)
-    # open_selected_stocks_link('e3ef1e0e-7d2b-11ec-ac22-acde4800')
+    # 打开选股结果
+    # open_selected_stocks_link('1e7fe596-926a-11ec-a7a4-acde4800')
     

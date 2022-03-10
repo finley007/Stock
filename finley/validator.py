@@ -4,6 +4,7 @@
 from abc import ABCMeta, abstractclassmethod
 import pandas as pd
 import ray
+import time
 
 from persistence import DaoMysqlImpl, FileUtils
 from datasource import TushareDatasource
@@ -48,6 +49,7 @@ def validate_data_integrity():
     stock_list = persistence.select("select ts_code from static_stock_list")
     for stock in stock_list:
         validate_stock(stock[0], persistence)
+    # time.sleep(300)
 
 # @ray.remote  
 def validate_stock(ts_code, persistence):

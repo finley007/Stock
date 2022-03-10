@@ -72,7 +72,7 @@ class Action(object):
     def get_profit_rate(self):
         return (self.get_close_price() - self.get_open_price())/self.get_open_price()
 
-@ray.remote
+# @ray.remote
 def simulate(factor, data, start_date = '', end_date = '', save = True):
         if (len(data) <= 30):
             print("Sub-new stock, will be ignore for simulation")

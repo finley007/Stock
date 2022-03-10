@@ -13,6 +13,8 @@ LOG_FILE = config.get('common', 'log_file')
 logging.basicConfig(filename=LOG_PATH + '/' + LOG_FILE, level=LOG_LEVEL)
 
 DATA_PATH = config.get('common', 'data_path')
+STOCK_DATA_PATH = DATA_PATH + 'stock/'
+FUTURE_DATA_PATH = DATA_PATH + 'future/'
 WORK_PATH = config.get('common', 'work_path')
 TEMP_PATH = config.get('common', 'temp_path')
 

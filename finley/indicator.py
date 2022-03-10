@@ -676,12 +676,53 @@ class OBV(Indicator):
             return -1
         return 0
     
+#资金流量指标
+class MFI(Indicator):
     
+    def __init__(self, params):
+        self._params = params
+        
+    def enrich(self, data):
+        data['tp'] = (data['high'] + data['low'] + data['close'])/3
+        data['last_tp'] = data['tp'].shift(1)
+        data['sign'] = data.apply(lambda x : self.get_trend_indicator(x), axis=1)
+        data['plus_signed_tp'] = 0
+        data['minus_signed_tp'] = 0
+        data.loc[(data['sign'] == 1), 'plus_signed_tp'] = data['tp'] * data['vol']
+        data.loc[(data['sign'] == -1), 'minus_signed_tp'] = data['tp'] * data['vol']
+        data['pmf.'+str(self._params[0])] = data['plus_signed_tp'].rolling(self._params[0]).sum()
+        data['nmf.'+str(self._params[0])] = data['minus_signed_tp'].rolling(self._params[0]).sum()
+        data['mfi.'+str(self._params[0])] = 100 - (100 / (1 + data['pmf.'+str(self._params[0])]/data['nmf.'+str(self._params[0])]))
+        return data
+        
+    def get_trend_indicator(self, x):
+        if (x['tp'] > x['last_tp']): 
+            return 1
+        if (x['tp'] < x['last_tp']):
+            return -1
+        return 0
+    
+#价量趋势指标
+class PVT(Indicator):
+    
+    def __init__(self, params):
+        self._params = params
+        
+    def enrich(self, data):
+        data['last_close'] = data['close'].shift(1)
+        data['factor'] = (data['close'] - data['last_close'])/data['last_close']
+        data['factor_vol'] = data['factor'] * data['vol']
+        factor_vol = np.array(data['factor_vol'])[1:]
+        pvt = np.cumsum(factor_vol)
+        pvt = np.insert(pvt, 0, 0)
+        data['pvt'] = pvt
+        return data
+        
   
 if __name__ == '__main__':
-    data = FileUtils.get_file_by_ts_code('600438.SH', True)
+    data = FileUtils.get_file_by_ts_code('000533.SZ', True)
     # data = data.iloc[::-1]
-    # indicator = MovingAverage([20])
+    indicator = MovingAverage([20])
     # data = indicator.enrich(data)
     # indicator = StandardDeviation([5])
     # data = indicator.enrich(data)
@@ -723,10 +764,14 @@ if __name__ == '__main__':
     # data = indicator.enrich(data)
     # indicator = FI([13])
     # data = indicator.enrich(data)
-    indicator = OBV([])
-    data = indicator.enrich(data)
+    # indicator = OBV([])
+    # data = indicator.enrich(data)
+    # indicator = MFI([14])
+    # data = indicator.enrich(data)
+    # indicator = PVT([])
+    # data = indicator.enrich(data)
     data['index_trade_date'] = pd.to_datetime(data['trade_date'])
     data = data.set_index(['index_trade_date'])
     data['volume'] = data['vol']
-    draw_analysis_curve(data[data['trade_date'] > '20210723'], volume = True, show_signal = True, signal_keys = ['obv'])
+    draw_analysis_curve(data[data['trade_date'] > '20210101'], volume = True, show_signal = True, signal_keys = ['pvt'])
     print("aa")

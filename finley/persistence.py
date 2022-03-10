@@ -35,17 +35,22 @@ class FileUtils(object):
     @staticmethod
     def save_file_by_ts_code(data, ts_code, is_reversion = False):
         if (is_reversion):
-            return FileUtils.save(data, constants.DATA_PATH + 'reversion/' + ts_code + '.pkl')
+            return FileUtils.save(data, constants.STOCK_DATA_PATH + 'reversion/' + ts_code + '.pkl')
         else:
-            return FileUtils.save(data, constants.DATA_PATH + ts_code + '.pkl')
+            return FileUtils.save(data, constants.STOCK_DATA_PATH + ts_code + '.pkl')
         
     # 根据股票代码获取文件
     @staticmethod
     def get_file_by_ts_code(ts_code, is_reversion = False):
         if (is_reversion):
-            return FileUtils.load(constants.DATA_PATH + '/reversion/' +  ts_code + '.pkl')
+            return FileUtils.load(constants.STOCK_DATA_PATH + '/reversion/' +  ts_code + '.pkl')
         else:
-            return FileUtils.load(constants.DATA_PATH + ts_code + '.pkl')
+            return FileUtils.load(constants.STOCK_DATA_PATH + ts_code + '.pkl')
+        
+    # 根据产品和合约获取文件
+    @staticmethod
+    def get_file_by_product_and_instrument(product, instrument):
+        return pd.read_pickle(constants.FUTURE_DATA_PATH + product + '/' + instrument + '-1m.pkl')
             
 
 # 数据库接口
@@ -139,7 +144,7 @@ class DaoMysqlImpl(Dao):
         return json.loads(result[0][0])
     
 if __name__ == '__main__':
-    dao = DaoMysqlImpl()
+    # dao = DaoMysqlImpl()
     # print(dao.select('select * from static_stock_list'))
     
     # df = pd.DataFrame({'source':['andriod','windows','iphone','linux','360浏览器']
@@ -148,6 +153,8 @@ if __name__ == '__main__':
     # FileUtils.save(df, constants.TEMP_PATH + 'test.pkl')
     # df1 = FileUtils.load(constants.TEMP_PATH + 'test.pkl')
     # print(df1)
-    print(dao.get_last_business_date())
+    # print(dao.get_last_business_date())
     # print(dao.get_next_business_date('20210925'))
     # print(dao.get_factor_case('MeanInflectionPoint_5_20210101_20210929'))
+    data = FileUtils.get_file_by_product_and_instrument('A', 'A1001')
+    print(data)

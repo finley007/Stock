@@ -10,6 +10,7 @@ ray.init()
 from factor.my_factor import LowerHatch
 from factor.trend_factor import MeanInflectionPoint, MeanTrend, MeanPenetration
 from factor.momentum_factor import KDJRegression, RSIPenetration, DRFPenetration, SOPenetration
+from factor.volume_factor import MFIPenetration, OBVTrend
 from persistence import DaoMysqlImpl, FileUtils
 from analysis import correlation_analysis, select_stock, retro_select_stock, position_analysis
 from visualization import draw_histogram
@@ -41,8 +42,7 @@ def pre_check():
     validate_data_integrity()
  
 @run_with_timecost   
-def do_correlation_analysis():
-    factor = LowerHatch([5])
+def do_correlation_analysis(factor):
     data = FileUtils.get_file_by_ts_code('603882.SH', is_reversion = True)
     periods = [1,2,3,4,5]
     correlation_analysis(factor, data, periods)
@@ -99,9 +99,10 @@ def run_retro_select_stock(factor_list, create_date):
 if __name__ == '__main__':
     pre_check()
     # 相关性分析
-    # do_correlation_analysis()
+    # factor = OBVTrend([0])
+    # do_correlation_analysis(factor)
     # 单一因子模拟
-    run_single_factor_simulation('factor.volume_factor', 'FIPenetration_13_20210101_2022217')
+    run_single_factor_simulation('factor.volume_factor', 'MFIPenetration_14_20210101_20220222')
     # 复合因子模拟
     # factor_list = []
     # factor_list.append(MeanPenetration([20]))
@@ -112,10 +113,11 @@ if __name__ == '__main__':
     # factor2 = RSIPenetration([14])
     # data = select_stock([factor1, factor2])
     # factor = SOPenetration([10])
+    # factor = MFIPenetration([14])
     # data = select_stock([factor])
     # 复盘
     # factor1 = KDJRegression([9])
     # factor2 = RSIPenetration([14])
-    # data = run_retro_select_stock([factor1, factor2], '20211231')
+    # data = run_retro_select_stock([factor1, factor2], '20220218')
     # 持股分析
     # run_position_analysis('factor.momentum_factor')
