@@ -26,3 +26,5 @@ DB_NAME = config.get('common', 'db_name')
 ANALYSIS_RESULT_TOP_N = config.get('common', 'analysis_result_top_n')
 
 STOCK_INFO_LINK = config.get('sina', 'stock_info_link_template')
+
+EXCLUDED_FILES = config.get('common', 'exclude_files').split(',')

@@ -7,6 +7,7 @@ import pandas as pd
 import pymysql
 import gzip
 import _pickle as cPickle
+import os
 
 import constants
 import json
@@ -51,6 +52,12 @@ class FileUtils(object):
     @staticmethod
     def get_file_by_product_and_instrument(product, instrument):
         return pd.read_pickle(constants.FUTURE_DATA_PATH + product + '/' + instrument + '-1m.pkl')
+    
+    # 获取指定目录下的所有文件
+    @staticmethod
+    def read_files_in_path(path):
+        all_files = list(map(lambda x: x, list(set(os.listdir(path)) - set(constants.EXCLUDED_FILES))))
+        return all_files
             
 
 # 数据库接口
@@ -156,5 +163,5 @@ if __name__ == '__main__':
     # print(dao.get_last_business_date())
     # print(dao.get_next_business_date('20210925'))
     # print(dao.get_factor_case('MeanInflectionPoint_5_20210101_20210929'))
-    data = FileUtils.get_file_by_product_and_instrument('A', 'A1001')
-    print(data)
+    # print(FileUtils.get_file_by_product_and_instrument('A', 'A1001'))
+    print(FileUtils.read_files_in_path(constants.FUTURE_DATA_PATH + 'IF'))

@@ -4,9 +4,11 @@
 import tools
 import uuid
 import ray
+from abc import ABCMeta, abstractclassmethod
 
 from persistence import DaoMysqlImpl
 
+#仿真交易类
 class Action(object):
     
     _stop_loss_rate = 0.9
@@ -72,13 +74,225 @@ class Action(object):
     def get_profit_rate(self):
         return (self.get_close_price() - self.get_open_price())/self.get_open_price()
 
+'''
+仿真器基类
+'''
+class Simulator(metaclass = ABCMeta):
+    
+    #仿真主方法
+    def simulate(self, factor, data, start_date = '', end_date = '', save = True):
+        #数据检查
+        if (not self.validate(data)):
+            return 
+        #预处理
+        data = self.pre_handle(data)
+        #因子计算
+        data = factor.caculate(data)
+        #数据过滤
+        filter_data = self.filter(data, start_date, end_date)
+        data = filter_data[0]
+        start_date = filter_data[1]
+        end_date = filter_data[2]
+        #仿真
+        data.loc[:,'action'] = data.apply(lambda item:factor.get_action_mapping(item),axis=1)
+        buy_action_list = data[data['action'] == 1]
+        sell_action_list = data[data['action'] == -1]
+        current_action = None
+        action_records = [] #保留执行记录
+        for action in buy_action_list.iterrows():
+            factor_date = action[1]['trade_date']
+            # 如果开仓时间比当前平仓时间小则跳过
+            if (current_action != None and factor_date <= current_action.get_close_date()):
+                continue
+            #获取出现交易信号之后的执行时间
+            trade_date = self.get_action_date(data, factor, factor_date)
+            if (not data[data['trade_date'] == trade_date].empty):
+                current_action = Action(trade_date, data[data['trade_date'] == trade_date]['open'].iloc[0], data) 
+            else:
+                continue
+            for action in sell_action_list.iterrows():
+                factor_date = action[1]['trade_date']
+                #找开仓日子后的第一个平仓信号
+                if (factor_date <= current_action.get_open_date()):
+                    continue
+                trade_date = self.get_action_date(data, factor, factor_date)
+                if (not data[data['trade_date'] == trade_date].empty):
+                    current_action.set_close_date(trade_date, data)
+                    current_action.set_close_price(data[data['trade_date'] == trade_date]['low'])
+                    break
+            if (current_action.get_close_date() == '' and not data[data['trade_date'] == end_date].empty):
+                current_action.set_close_date(end_date, data)
+                current_action.set_close_price(data[data['trade_date'] == end_date]['low'])
+            if (current_action.get_close_date() != ''):
+                action_records.append(current_action)
+        self.print_simulate_result(factor, data, action_records, start_date, end_date, factor.get_version(), save)
+        
+    #结果处理
+    def print_simulate_result(self, factor, data, action_records, start_date, end_date, version, save = True):
+        win_count = 0
+        loss_count = 0
+        profit = 0
+        max_profit = 0
+        max_profit_open_date = ''
+        max_profit_open_price = ''
+        max_profit_close_date = ''
+        max_profit_close_price = ''
+        min_profit = 0
+        min_profit_open_date = ''
+        min_profit_open_price = ''
+        min_profit_close_date = ''
+        min_profit_close_price = ''
+        for action in action_records:
+            print('+++++++++++++++++++++')
+            print(action.get_open_date() + '-' + action.get_close_date())
+            print(str(action.get_open_price()) + '-' + str(action.get_close_price()))
+            current_profit = action.get_close_price() - action.get_open_price()
+            profit = profit + current_profit
+            if (action.get_profit_rate() > 0):
+                win_count = win_count + 1
+            else:
+                loss_count = loss_count + 1
+            if (current_profit > max_profit):
+                max_profit = current_profit
+                max_profit_open_date = action.get_open_date()
+                max_profit_open_price = action.get_open_price()
+                max_profit_close_date = action.get_close_date()
+                max_profit_close_price = action.get_close_price()
+            if (current_profit < min_profit):
+                min_profit = current_profit
+                min_profit_open_date = action.get_open_date()
+                min_profit_open_price= action.get_open_price()
+                min_profit_close_date = action.get_close_date()
+                min_profit_close_price = action.get_close_price()
+        #股票代码
+        # print('股票代码:' + data.iloc[-1]['ts_code'])
+        #日期范围
+        # print('日期区间:' + str(tools.get_date_scope(start_date, end_date)))
+        #交易次数        
+        print('交易次数:' + str(len(action_records)))
+        #获利次数
+        print('获利次数:' + str(win_count))
+        #亏损次数
+        print('亏损次数:' + str(loss_count))
+        #最大获利
+        print('最大获利:' + str(max_profit_open_date) + '|' + str(max_profit_close_date) + '|' + str(max_profit_open_price) + '|' + str(max_profit_close_price) + '|' + str(max_profit))
+        #最大亏损
+        print('最大亏损:' + str(min_profit_open_date) + '|' + str(min_profit_close_date) + '|' + str(min_profit_open_price) + '|' + str(min_profit_close_price) + '|' + str(min_profit))
+        #利润
+        print('利润:' + str(profit))
+        #利润率
+        print('利润率:' + str(profit/data.iloc[-1]['close']))
+        if (save):
+            factor_case = factor.get_factor_code() + '_' + str(factor.get_params()[0]) + '_' + start_date + '_' + end_date
+            persistence = DaoMysqlImpl()
+            item = (uuid.uuid1(), factor_case, data.iloc[-1]['ts_code'], start_date, end_date, str(len(action_records)), str(win_count), str(loss_count), str(max_profit), str(min_profit), str(max_profit_open_date), str(min_profit_open_date), str(profit), str(profit/data.iloc[-1]['close']), version)
+            persistence.insert('insert into simulation_result values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)', [item])
+    #校验
+    @abstractclassmethod
+    def validate(self, data):
+        pass
+    
+    #按时间过滤
+    @abstractclassmethod
+    def filter(self, data, start_date, end_date):
+        pass
+    
+    #获取执行时间
+    @abstractclassmethod
+    def get_action_date(self, data, factor, factor_date):
+        pass
+    
+    #预处理
+    @abstractclassmethod
+    def pre_handle(self, data):
+        pass
+ 
+#股票仿真器    
+class StockSimulator(Simulator):
+    
+    def __init__(self):
+        self._dao = DaoMysqlImpl()
+    
+    #校验
+    def validate(self, data):
+        if (len(data) <= 30):
+            print("Sub-new stock, will be ignore for simulation")
+            return False
+        return True
+    
+    #按时间过滤
+    def filter(self, data, start_date, end_date):
+        if (end_date == ''):
+            end_date = self._dao.get_last_business_date()
+        if (start_date == ''):
+            data = data[(data['trade_date'] <= end_date)]
+            start_date = data['trade_date'].head(1).item()
+        else:
+            data = data[(data['trade_date'] >= start_date) & (data['trade_date'] <= end_date)]
+        return (data, start_date, end_date)
+    
+    #获取执行时间
+    def get_action_date(self, data, factor, factor_date):
+        trade_date = self._dao.get_next_business_date(factor_date)
+        signal_delay = factor.get_signal_delay()
+        while(signal_delay > 1):
+            trade_date = self._dao.get_next_business_date(trade_date)
+            signal_delay = signal_delay - 1
+        return trade_date
+    
+    #预处理
+    def pre_handle(self, data):
+        return data
+    
+#期货仿真器    
+class FutrueSimulator(Simulator):
+    
+    def __init__(self):
+        print("aa")
+    
+    #校验
+    def validate(self, data):
+        return True
+    
+    #按时间过滤
+    def filter(self, data, start_date, end_date):
+        if (end_date != ''):
+            data = data[(data['trade_date'] <= end_date)]
+        else:
+            end_date = data['trade_date'].iloc[-1]
+        if (start_date != ''):
+            data = data[(data['trade_date'] >= start_date)]
+        else:
+            start_date = data['trade_date'].head(1).item()
+        return (data, start_date, end_date)
+    
+    #获取执行时间
+    def get_action_date(self, data, factor, factor_date):
+        return tools.add_minutes_by_str(factor_date, int(factor.get_signal_delay()))
+    
+    #预处理
+    def pre_handle(self, data):
+        # 用index创建trade_date列
+        data.index = tools.format_time(data.index)
+        data['trade_date'] = data.index
+        return data
+    
 # @ray.remote
+'''
+仿真主方法
+1. validation
+2. filter
+3. create action list
+4. print result
+'''
 def simulate(factor, data, start_date = '', end_date = '', save = True):
+        #数据检查
         if (len(data) <= 30):
             print("Sub-new stock, will be ignore for simulation")
             return
-        dao = DaoMysqlImpl()
         data = factor.caculate(data)
+        #获取开始和结束时间
+        dao = DaoMysqlImpl()
         if (end_date == ''):
             end_date = dao.get_last_business_date()
         if (start_date == ''):
@@ -108,7 +322,7 @@ def simulate(factor, data, start_date = '', end_date = '', save = True):
                 continue
             for action in sell_action_list.iterrows():
                 factor_date = action[1]['trade_date']
-                #招开仓日子后的第一个平仓信号
+                #找开仓日子后的第一个平仓信号
                 if (factor_date <= current_action.get_open_date()):
                     continue
                 trade_date = dao.get_next_business_date(factor_date)
@@ -186,3 +400,4 @@ def print_simulate_result(factor, data, action_records, start_date, end_date, ve
             persistence = DaoMysqlImpl()
             item = (uuid.uuid1(), factor_case, data.iloc[-1]['ts_code'], start_date, end_date, str(len(action_records)), str(win_count), str(loss_count), str(max_profit), str(min_profit), str(max_profit_open_date), str(min_profit_open_date), str(profit), str(profit/data.iloc[-1]['close']), version)
             persistence.insert('insert into simulation_result values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)', [item])
+            

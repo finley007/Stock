@@ -721,15 +721,16 @@ class PVT(Indicator):
   
 if __name__ == '__main__':
     data = FileUtils.get_file_by_ts_code('000533.SZ', True)
+    # data = FileUtils.get_file_by_product_and_instrument('C', 'C1105')
     # data = data.iloc[::-1]
-    indicator = MovingAverage([20])
+    # indicator = MovingAverage([20])
     # data = indicator.enrich(data)
     # indicator = StandardDeviation([5])
     # data = indicator.enrich(data)
     # indicator = AtrMean([14])
     # data = indicator.enrich(data)
-    # indicator = MeanPercentageEnvelope([5])
-    # data = indicator.enrich(data)
+    indicator = MeanPercentageEnvelope([5])
+    data = indicator.enrich(data)
     # indicator = PricePercentageEnvelope([5])
     # data = indicator.enrich(data)
     # indicator = ATREnvelope([5])
@@ -773,5 +774,6 @@ if __name__ == '__main__':
     data['index_trade_date'] = pd.to_datetime(data['trade_date'])
     data = data.set_index(['index_trade_date'])
     data['volume'] = data['vol']
-    draw_analysis_curve(data[data['trade_date'] > '20210101'], volume = True, show_signal = True, signal_keys = ['pvt'])
+    draw_analysis_curve(data[data['trade_date'] > '20210101'], volume = True, show_signal = True, signal_keys = ['mean.5'])
+    # draw_analysis_curve(data, volume = True, show_signal = False, signal_keys = ['mean.5'])
     print("aa")
