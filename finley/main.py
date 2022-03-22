@@ -102,7 +102,7 @@ if __name__ == '__main__':
     # factor = OBVTrend([0])
     # do_correlation_analysis(factor)
     # 单一因子模拟
-    run_single_factor_simulation('factor.volume_factor', 'MFIPenetration_14_20210101_20220222')
+    # run_single_factor_simulation('factor.volume_factor', 'MFIPenetration_14_20210101_20220222')
     # 复合因子模拟
     # factor_list = []
     # factor_list.append(MeanPenetration([20]))
