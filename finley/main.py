@@ -15,7 +15,7 @@ from persistence import DaoMysqlImpl, FileUtils
 from analysis import correlation_analysis, select_stock, retro_select_stock, position_analysis
 from visualization import draw_histogram
 from synchronization import incremental_synchronize_stock_daily_data, synchronize_all_stock, synchronize_stock_daily_data
-from simulator import simulate 
+from simulator import StockSimulator, FutrueSimulator 
 from machinelearning import MachineLearn, CompoundFactor, TrainingModel
 from log import log_info
 from tools import run_with_timecost, create_instance, to_params
@@ -40,6 +40,9 @@ def pre_check():
     #2
     log_info('Validate data')
     validate_data_integrity()
+    
+    #3
+    log_info('Create statistic')
  
 @run_with_timecost   
 def do_correlation_analysis(factor):
@@ -50,14 +53,22 @@ def do_correlation_analysis(factor):
     print("aa")
 
 @run_with_timecost    
-def run_single_factor_simulation(package, factor_case_code):
+def run_single_factor_simulation(package, factor_case_code, is_stock = True):
     persistence = DaoMysqlImpl()
     factor_case = persistence.select("select * from factor_case where id = '" + factor_case_code + "'")
     factor = create_instance(package, factor_case[0][1], to_params(factor_case[0][2]))
-    stock_list = persistence.select("select ts_code from static_stock_list")
-    for stock in stock_list:
-        data = FileUtils.get_file_by_ts_code(stock[0], is_reversion = True)
-        simulate.remote(factor, data, factor_case[0][3])
+    if (is_stock):
+        simulator = StockSimulator()
+        stock_list = persistence.select("select ts_code from static_stock_list")
+        for stock in stock_list:
+            data = FileUtils.get_file_by_ts_code(stock[0], is_reversion = True)
+            simulator.simulate(factor, data, factor_case[0][3])
+    else:
+        simulator = FutrueSimulator()
+        instrument_list = persistence.select("select product, instrument from future_instrument_list where instrument not in (select ts_code from simulation_result where type = 'FUTURE')")
+        for instrument in instrument_list:
+            data = FileUtils.get_file_by_product_and_instrument(instrument[0], instrument[1])
+            simulator.simulate(factor, data)
     time.sleep(300)
   
 @run_with_timecost      
@@ -102,7 +113,7 @@ if __name__ == '__main__':
     # factor = OBVTrend([0])
     # do_correlation_analysis(factor)
     # 单一因子模拟
-    # run_single_factor_simulation('factor.volume_factor', 'MFIPenetration_14_20210101_20220222')
+    run_single_factor_simulation('factor.trend_factor', 'MeanInflectionPoint_10_20210101_20211214', False)
     # 复合因子模拟
     # factor_list = []
     # factor_list.append(MeanPenetration([20]))

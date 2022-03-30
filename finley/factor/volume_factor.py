@@ -76,7 +76,7 @@ class OBVTrend(Factor):
      
 if __name__ == '__main__':
     #图像分析
-    data = FileUtils.get_file_by_ts_code('600060.SH', is_reversion = True)
+    data = FileUtils.get_file_by_ts_code('688778.SH', is_reversion = True)
     # factor = FIPenetration([13])
     factor = MFIPenetration([14])
     data = factor.caculate(data)

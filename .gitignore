@@ -6,3 +6,5 @@ finley/report/
 finley/workspace.code-workspace
 log/
 temp/
+.DS_Store
+origin/

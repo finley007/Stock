@@ -56,7 +56,7 @@ class Action(metaclass = ABCMeta):
             return self._close_price
         
     def get_profit_rate(self):
-        return (self.get_close_price() - self.get_open_price())/self.get_open_price()
+        return self.get_profit()/self.get_open_price()
     
     @abstractclassmethod
     def init_stop_loss_price(self):
@@ -69,10 +69,24 @@ class Action(metaclass = ABCMeta):
     @abstractclassmethod
     def caculate_stop_loss_price_and_date(self, data):
         pass
+    
+    @abstractclassmethod
+    def get_action_type(self):
+        pass
+    
+    @abstractclassmethod
+    def get_profit(self):
+        pass
 
 #做空   
 class ShortAction(Action):
         
+    def get_action_type(self):
+        return "做空"
+    
+    def get_profit(self):
+        return self.get_open_price() - self.get_close_price()
+    
     def init_stop_loss_price(self):
         self._stop_loss_price = self._open_price + self._open_price * (1 - self._stop_loss_rate)
         
@@ -103,6 +117,12 @@ class ShortAction(Action):
     
 #做多
 class LongAction(Action):
+    
+    def get_action_type(self):
+        return "做多"
+    
+    def get_profit(self):
+        return self.get_close_price() - self.get_open_price()
     
     def init_stop_loss_price(self):
         self._stop_loss_price = self._open_price * self._stop_loss_rate
@@ -172,9 +192,10 @@ class Simulator(metaclass = ABCMeta):
         min_profit_close_price = ''
         for action in action_records:
             print('+++++++++++++++++++++')
+            print('交易类型:' + action.get_action_type())
             print(action.get_open_date() + '-' + action.get_close_date())
             print(str(action.get_open_price()) + '-' + str(action.get_close_price()))
-            current_profit = action.get_close_price() - action.get_open_price()
+            current_profit = action.get_profit()
             profit = profit + current_profit
             if (action.get_profit_rate() > 0):
                 win_count = win_count + 1
@@ -213,8 +234,9 @@ class Simulator(metaclass = ABCMeta):
         if (save):
             factor_case = factor.get_factor_code() + '_' + str(factor.get_params()[0]) + '_' + start_date + '_' + end_date
             persistence = DaoMysqlImpl()
-            item = (uuid.uuid1(), factor_case, data.iloc[-1]['ts_code'], start_date, end_date, str(len(action_records)), str(win_count), str(loss_count), str(max_profit), str(min_profit), str(max_profit_open_date), str(min_profit_open_date), str(profit), str(profit/data.iloc[-1]['close']), version)
-            persistence.insert('insert into simulation_result values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)', [item])
+            item = (uuid.uuid1(), factor_case, self.get_ts_code(data), start_date, end_date, str(len(action_records)), str(win_count), str(loss_count), str(max_profit), str(min_profit), str(max_profit_open_date), str(min_profit_open_date), str(profit), str(profit/data.iloc[-1]['close']), version, self.get_type())
+            persistence.insert('insert into simulation_result values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)', [item])
+    
     #校验
     @abstractclassmethod
     def validate(self, data):
@@ -238,6 +260,16 @@ class Simulator(metaclass = ABCMeta):
     #执行仿真
     @abstractclassmethod
     def execute_simulate(self, data, factor, start_date, end_date):
+        pass
+    
+    #获取代码
+    @abstractclassmethod
+    def get_ts_code(self, data):
+        pass
+    
+    #获取仿真类型
+    @abstractclassmethod
+    def get_type(self):
         pass
  
 #股票仿真器    
@@ -283,13 +315,13 @@ class StockSimulator(Simulator):
         buy_action_list = data[data['action'] == 1]
         sell_action_list = data[data['action'] == -1]
         current_action = None
-        action_records = [] #保留执行记录
+        action_records = []
         for action in buy_action_list.iterrows():
             factor_date = action[1]['trade_date']
             # 如果开仓时间比当前平仓时间小则跳过
             if (current_action != None and factor_date <= current_action.get_close_date()):
                 continue
-            #获取出现交易信号之后的执行时间
+            #当天出现交易信号第2天交易
             trade_date = self.get_action_date(data, factor, factor_date)
             if (not data[data['trade_date'] == trade_date].empty):
                 current_action = LongAction(trade_date, data[data['trade_date'] == trade_date]['open'].iloc[0], data) 
@@ -311,6 +343,13 @@ class StockSimulator(Simulator):
             if (current_action.get_close_date() != ''):
                 action_records.append(current_action)
         return action_records
+    
+    def get_ts_code(self, data):
+        return data.iloc[-1]['ts_code']
+    
+    def get_type(self):
+        return 'STOCK'
+    
     
 #期货仿真器    
 class FutrueSimulator(Simulator):
@@ -344,6 +383,40 @@ class FutrueSimulator(Simulator):
         data.index = tools.format_time(data.index)
         data['trade_date'] = data.index
         return data
+    
+    #执行仿真
+    def execute_simulate(self, data, factor, start_date, end_date):
+        data.loc[:,'action'] = data.apply(lambda item:factor.get_action_mapping(item),axis=1)
+        action_list = data[data['action'] != 0]
+        current_action = None
+        action_records = [] #保留执行记录
+        for action in action_list.iterrows():
+            factor_date = action[1]['trade_date']
+            trade_date = self.get_action_date(data, factor, factor_date)
+            if (current_action == None):#开仓
+                if (not data[data['trade_date'] == trade_date].empty):
+                    if (action[1]['action'] == 1):
+                        current_action = LongAction(trade_date, data[data['trade_date'] == trade_date]['open'].iloc[0], data)
+                    else:
+                        current_action = ShortAction(trade_date, data[data['trade_date'] == trade_date]['open'].iloc[0], data)
+                else:
+                    continue
+            else:#平仓
+                if (not data[data['trade_date'] == trade_date].empty and ((isinstance(current_action, LongAction) and action[1]['action'] == -1)
+                    or (isinstance(current_action, ShortAction) and action[1]['action'] == 1))):
+                    current_action.set_close_date(trade_date, data)
+                    current_action.set_close_price(data[data['trade_date'] == trade_date]['low'])
+                    action_records.append(current_action)
+                    current_action = None
+                else:
+                    continue
+        return action_records
+    
+    def get_ts_code(self, data):
+        return data.iloc[-1]['instrument']
+    
+    def get_type(self):
+        return 'FUTURE'
     
 # @ray.remote
 '''

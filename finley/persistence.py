@@ -8,6 +8,8 @@ import pymysql
 import gzip
 import _pickle as cPickle
 import os
+import shutil
+from glob import glob
 
 import constants
 import json
@@ -51,13 +53,27 @@ class FileUtils(object):
     # 根据产品和合约获取文件
     @staticmethod
     def get_file_by_product_and_instrument(product, instrument):
-        return pd.read_pickle(constants.FUTURE_DATA_PATH + product + '/' + instrument + '-1m.pkl')
+        data = pd.read_pickle(constants.FUTURE_DATA_PATH + product + '/' + instrument + '-1m.pkl')
+        data['product'] = product
+        data['instrument'] = instrument
+        return data
     
     # 获取指定目录下的所有文件
     @staticmethod
     def read_files_in_path(path):
         all_files = list(map(lambda x: x, list(set(os.listdir(path)) - set(constants.EXCLUDED_FILES))))
         return all_files
+    
+    # 复制文件
+    @staticmethod
+    def copy_file(source_file, target_file):
+        shutil.copy(source_file, target_file)
+        
+    # 模糊搜索文件
+    def search_file(pattern, search_path, pathsep=os.pathsep):
+        for path in search_path.split(os.pathsep):
+            for match in glob(os.path.join(path, pattern)):
+                yield match
             
 
 # 数据库接口
@@ -164,4 +180,14 @@ if __name__ == '__main__':
     # print(dao.get_next_business_date('20210925'))
     # print(dao.get_factor_case('MeanInflectionPoint_5_20210101_20210929'))
     # print(FileUtils.get_file_by_product_and_instrument('A', 'A1001'))
-    print(FileUtils.read_files_in_path(constants.FUTURE_DATA_PATH + 'IF'))
+    # print(FileUtils.read_files_in_path(constants.FUTURE_DATA_PATH + 'IF'))
+    # FileUtils.copy_file('/Users/finley/Projects/Stock/origin/AL/AL2205-1m.pkl', '/Users/finley/Projects/Stock/data/future/AL/AL2205-1m.pkl')
+    
+    # 拷贝
+    product_list = ['A','AG','AL','AP','AU','BU','C','CF','CS','CU','EB','EG','FG','FU','HC','I','IC','IF','IH','J','JD','JM','L','LU','M','MA','NI','OI','P','PG','PP','RB','RM','RU','SA','SC','SF','SM','SP','SR','T','TA','TF','V','Y','ZC','ZN']
+    for product in product_list:
+        files = list(FileUtils.search_file('*-1m.pkl', '/Users/finley/Projects/Stock/origin/' + product + '/'))
+        for file in files:
+            target_files = list(FileUtils.search_file(file.split('/')[7], '/Users/finley/Projects/Stock/data/future/' + product + '/'))
+            if (len(target_files) == 0):
+                FileUtils.copy_file('/Users/finley/Projects/Stock/origin/' + product + '/' + file.split('/')[7], '/Users/finley/Projects/Stock/data/future/' + product + '/' + file.split('/')[7])

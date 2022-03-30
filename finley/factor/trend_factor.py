@@ -198,7 +198,7 @@ if __name__ == '__main__':
     # draw_analysis_curve(data[(data['trade_date'] >= '20210101')], volume = False, show_signal = True, signal_keys = [factor.get_factor_code(),'mean.20'])
     # print('aa')
     # 期货
-    data = FileUtils.get_file_by_product_and_instrument('IF', 'IF2102')
+    data = FileUtils.get_file_by_product_and_instrument('SM', 'SM1601')
     factor = MeanInflectionPoint([20])
     # factor = MeanPenetration([20])
     # factor = MeanTrend([20])
@@ -207,7 +207,8 @@ if __name__ == '__main__':
     # factor = EnvelopePenetration_Keltner([20])
     # factor = AdvanceEnvelopePenetration_Keltner([20])
     data = factor.caculate(data)
-    draw_analysis_curve(data[(data.index >= '2021-01-25')], volume = True, show_signal = True, signal_keys = [factor.get_factor_code(),'mean.20'])
+    draw_analysis_curve(data[(data.index >= '2015-09-28 10:00:00') & (data.index <= '2015-10-09 11:30:00')], volume = True, show_signal = True, signal_keys = [factor.get_factor_code(),'mean.20'])
+    # draw_analysis_curve(data, volume = True, show_signal = True, signal_keys = [factor.get_factor_code(),'mean.20'])
     print('aa')
     
     #模拟
@@ -225,16 +226,16 @@ if __name__ == '__main__':
     # simulator.simulate(factor, data, start_date = '20210101', save = False)
     # simulate(factor, data, start_date = '20210101', save = False)
     #期货
-    # data = FileUtils.get_file_by_product_and_instrument('IF', 'IF2102')
-    # factor = MeanInflectionPoint([20])
-    # # # factor = MeanTrend([20])
-    # # factor = MeanPenetration([20])
-    # # # factor = EnvelopePenetration_MeanPercentage([20])
-    # # # factor = EnvelopePenetration_ATR([20])
-    # # # factor = MACDPenetration([])
-    # # # factor = EnvelopePenetration_Keltner([20])
-    # simulator = FutrueSimulator()
-    # simulator.simulate(factor, data, save = False)
+    data = FileUtils.get_file_by_product_and_instrument('SM', 'SM1601')
+    factor = MeanInflectionPoint([20])
+    # # factor = MeanTrend([20])
+    # factor = MeanPenetration([20])
+    # # factor = EnvelopePenetration_MeanPercentage([20])
+    # # factor = EnvelopePenetration_ATR([20])
+    # # factor = MACDPenetration([])
+    # # factor = EnvelopePenetration_Keltner([20])
+    simulator = FutrueSimulator()
+    simulator.simulate(factor, data, '2015-09-28 10:00:00', '2015-10-09 11:30:00', save = False)
     
     
     #计算两个因子相关性

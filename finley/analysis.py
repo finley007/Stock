@@ -281,6 +281,8 @@ def factor_correlation_analysis(factor1, factor2, stock_list = [], save_result =
                 item = (factor1.get_factor_code(), factor1.get_params()[0], factor2.get_factor_code(), factor2.get_params()[0], stock[0], correlation, tools.get_current_date())
                 persistence.insert('insert into factor_correlation_result values (REPLACE(UUID(),"-",""),%s,%s,%s,%s,%s,%s,%s)', [item])
                    
+#生成统计信息
+
 if __name__ == '__main__':
     # print(_ts_code_transform('100000.SZ'))
     
@@ -298,7 +300,7 @@ if __name__ == '__main__':
     # factor = WRRegression([30])
     # factor = UOPenetration([7,14,28])
     # factor = FIPenetration([13])
-    factor = MFIPenetration([14])
+    # factor = MFIPenetration([14])
     # factor_list = []
     # factor_list.append(MeanPenetration([20]))
     # factor_list.append(MeanTrend([20]))
@@ -314,9 +316,9 @@ if __name__ == '__main__':
     # 生成全部股票相关性分析结果
     # correlation_analysis_all_stocks(factor)
     # 相关性分析结果统计
-    correlation_analysis_report(factor)
+    # correlation_analysis_report(factor)
     # 因子相关性分析
     # factor_correlation_analysis(factor1, factor2)
     # 打开选股结果
-    # open_selected_stocks_link('1e7fe596-926a-11ec-a7a4-acde4800')
+    open_selected_stocks_link('fdc48b14-ae38-11ec-8878-acde4800')
     
