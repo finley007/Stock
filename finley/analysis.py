@@ -282,6 +282,27 @@ def factor_correlation_analysis(factor1, factor2, stock_list = [], save_result =
                 persistence.insert('insert into factor_correlation_result values (REPLACE(UUID(),"-",""),%s,%s,%s,%s,%s,%s,%s)', [item])
                    
 #生成统计信息
+def create_stock_statistics(trade_date):
+    persistence = DaoMysqlImpl()
+    stock_list = persistence.select("select ts_code from static_stock_list")
+    rising_count = 0
+    falling_count = 0
+    flat_count = 0
+    for stock in stock_list:
+        data = FileUtils.get_file_by_ts_code(stock[0], True)
+        data['delta'] = data['close'] - data['close'].shift(1)
+        if (data[data['trade_date'] == trade_date]['delta'].max() > 0):
+            rising_count = rising_count + 1
+        elif (data[data['trade_date'] == trade_date]['delta'].max() < 0):
+            falling_count = falling_count + 1
+        else:
+            flat_count = flat_count + 1
+    persistence.delete('delete from stock_statistics where trade_date = ' + trade_date)
+    item = (trade_date, str(rising_count), str(falling_count), str(flat_count))
+    persistence.insert('insert into stock_statistics values (%s, %s, %s, %s)', [item])
+        
+
+
 
 if __name__ == '__main__':
     # print(_ts_code_transform('100000.SZ'))
@@ -320,5 +341,7 @@ if __name__ == '__main__':
     # 因子相关性分析
     # factor_correlation_analysis(factor1, factor2)
     # 打开选股结果
-    open_selected_stocks_link('fdc48b14-ae38-11ec-8878-acde4800')
+    # open_selected_stocks_link('fdc48b14-ae38-11ec-8878-acde4800')
+    # 声称股票统计信息
+    create_stock_statistics('20220321')
     

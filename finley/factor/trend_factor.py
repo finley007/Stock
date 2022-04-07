@@ -9,7 +9,7 @@ sys.path.insert(0,parentdir)
 from persistence import FileUtils
 from visualization import draw_analysis_curve
 from indicator import MovingAverage, ATREnvelope, MeanPercentageEnvelope, KeltnerEnvelope, AdvanceKeltnerEnvelope
-from simulator import simulate, StockSimulator, FutrueSimulator
+from simulator import StockSimulator, FutrueSimulator, capital_curve_simulate
 from factor.base_factor import Factor
 
 # 移动平均线拐点 
@@ -198,18 +198,18 @@ if __name__ == '__main__':
     # draw_analysis_curve(data[(data['trade_date'] >= '20210101')], volume = False, show_signal = True, signal_keys = [factor.get_factor_code(),'mean.20'])
     # print('aa')
     # 期货
-    data = FileUtils.get_file_by_product_and_instrument('SM', 'SM1601')
-    factor = MeanInflectionPoint([20])
-    # factor = MeanPenetration([20])
-    # factor = MeanTrend([20])
-    # factor = EnvelopePenetration_MeanPercentage([20])
-    # factor = EnvelopePenetration_ATR([20])
-    # factor = EnvelopePenetration_Keltner([20])
-    # factor = AdvanceEnvelopePenetration_Keltner([20])
-    data = factor.caculate(data)
-    draw_analysis_curve(data[(data.index >= '2015-09-28 10:00:00') & (data.index <= '2015-10-09 11:30:00')], volume = True, show_signal = True, signal_keys = [factor.get_factor_code(),'mean.20'])
-    # draw_analysis_curve(data, volume = True, show_signal = True, signal_keys = [factor.get_factor_code(),'mean.20'])
-    print('aa')
+    # data = FileUtils.get_file_by_product_and_instrument('SM', 'SM1601')
+    # factor = MeanInflectionPoint([20])
+    # # factor = MeanPenetration([20])
+    # # factor = MeanTrend([20])
+    # # factor = EnvelopePenetration_MeanPercentage([20])
+    # # factor = EnvelopePenetration_ATR([20])
+    # # factor = EnvelopePenetration_Keltner([20])
+    # # factor = AdvanceEnvelopePenetration_Keltner([20])
+    # data = factor.caculate(data)
+    # draw_analysis_curve(data[(data.index >= '2015-09-28 10:00:00') & (data.index <= '2015-10-09 11:30:00')], volume = True, show_signal = True, signal_keys = [factor.get_factor_code(),'mean.20'])
+    # # draw_analysis_curve(data, volume = True, show_signal = True, signal_keys = [factor.get_factor_code(),'mean.20'])
+    # print('aa')
     
     #模拟
     #股票
@@ -226,16 +226,16 @@ if __name__ == '__main__':
     # simulator.simulate(factor, data, start_date = '20210101', save = False)
     # simulate(factor, data, start_date = '20210101', save = False)
     #期货
-    data = FileUtils.get_file_by_product_and_instrument('SM', 'SM1601')
-    factor = MeanInflectionPoint([20])
-    # # factor = MeanTrend([20])
-    # factor = MeanPenetration([20])
-    # # factor = EnvelopePenetration_MeanPercentage([20])
-    # # factor = EnvelopePenetration_ATR([20])
-    # # factor = MACDPenetration([])
-    # # factor = EnvelopePenetration_Keltner([20])
-    simulator = FutrueSimulator()
-    simulator.simulate(factor, data, '2015-09-28 10:00:00', '2015-10-09 11:30:00', save = False)
+    # data = FileUtils.get_file_by_product_and_instrument('SM', 'SM1601')
+    # factor = MeanInflectionPoint([20])
+    # # # factor = MeanTrend([20])
+    # # factor = MeanPenetration([20])
+    # # # factor = EnvelopePenetration_MeanPercentage([20])
+    # # # factor = EnvelopePenetration_ATR([20])
+    # # # factor = MACDPenetration([])
+    # # # factor = EnvelopePenetration_Keltner([20])
+    # simulator = FutrueSimulator()
+    # simulator.simulate(factor, data, '2015-09-28 10:00:00', '2015-10-09 11:30:00', save = False)
     
     
     #计算两个因子相关性
@@ -254,3 +254,8 @@ if __name__ == '__main__':
     # data = factor.caculate_concat(data_list)
     # print(len(data))
     # print(data)
+    
+     # 测试 capital_curve_simulate
+    initial_capital_amount = 1000000
+    factor = MeanInflectionPoint([10])
+    capital_curve_simulate(initial_capital_amount, 30, factor, '2021-11-10 00:00:00', products = ['FU'])

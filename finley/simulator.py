@@ -6,7 +6,9 @@ import uuid
 import ray
 from abc import ABCMeta, abstractclassmethod
 
-from persistence import DaoMysqlImpl
+from persistence import DaoMysqlImpl, FileUtils
+from visualization import draw_line
+
 
 #仿真交易类
 class Action(metaclass = ABCMeta):
@@ -174,6 +176,7 @@ class Simulator(metaclass = ABCMeta):
         #仿真
         action_records = self.execute_simulate(data, factor, start_date, end_date)
         self.print_simulate_result(factor, data, action_records, start_date, end_date, factor.get_version(), save)
+        return action_records
         
     #结果处理
     def print_simulate_result(self, factor, data, action_records, start_date, end_date, version, save = True):
@@ -481,6 +484,7 @@ def simulate(factor, data, start_date = '', end_date = '', save = True):
             if (current_action.get_close_date() != ''):
                 action_records.append(current_action)
         print_simulate_result(factor, data, action_records, start_date, end_date, factor.get_version(), save)
+        return action_records
         
 def print_simulate_result(factor, data, action_records, start_date, end_date, version, save = True):
         win_count = 0
@@ -541,4 +545,41 @@ def print_simulate_result(factor, data, action_records, start_date, end_date, ve
             persistence = DaoMysqlImpl()
             item = (uuid.uuid1(), factor_case, data.iloc[-1]['ts_code'], start_date, end_date, str(len(action_records)), str(win_count), str(loss_count), str(max_profit), str(min_profit), str(max_profit_open_date), str(min_profit_open_date), str(profit), str(profit/data.iloc[-1]['close']), version)
             persistence.insert('insert into simulation_result values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)', [item])
+            
+            
+def capital_curve_simulate(initial_capital_amount, trans_amout, factor, start_time, end_time='', products=[]):
+    # 获取时间段内的所有合约
+    instrument = get_instrument(start_time, end_time, products)
+    simulator = FutrueSimulator()
+    data = FileUtils.get_file_by_product_and_instrument(instrument[0][0], instrument[0][1])
+    data['assets'] = initial_capital_amount
+    action_records = simulator.simulate(factor, data)
+    for action in action_records:
+        if isinstance(action, LongAction):
+            data.loc[(data.index >= action.get_open_date()) & (data.index <= action.get_close_date()), 'assets'] = data['assets'] - trans_amout * action.get_open_price() + trans_amout * data['close']
+            data.loc[data.index > action.get_close_date(),'assets'] = data['assets'] - trans_amout * action.get_open_price() + trans_amout * action.get_close_price()
+        else:
+            data.loc[(data.index >= action.get_open_date()) & (data.index <= action.get_close_date()), 'assets'] = data['assets'] + trans_amout * action.get_open_price() - trans_amout * data['close']
+            data.loc[data.index > action.get_close_date(),'assets'] = data['assets'] + trans_amout * action.get_open_price() - trans_amout * action.get_close_price()
+    data['time'] = data.index
+    draw_line(data,'Capital Curve','Time','Balance',{'x':'time','y':[{'key':'assets','label':'资金余额'}]})     
+    print('aa')
+    
+def get_instrument(start_time, end_time='', products=[]):
+    dao = DaoMysqlImpl()
+    if (end_time == '' and len(products) == 0):
+        return dao.select("select product, instrument from future_instrument_list where start_time > '" + start_time + "'")
+    if (end_time == '' and len(products) > 0):
+        return dao.select("select product, instrument from future_instrument_list where start_time > '" + start_time + "' and product in ({})".format(','.join(["'%s'" % product for product in products])))
+    if (end_time != '' and len(products) > 0):
+        return dao.select("select product, instrument from future_instrument_list where start_time > '" + start_time + "' and end_time < '" + end_time + "' and product in ({})".format(','.join(["'%s'" % product for product in products])))
+    
+if __name__ == '__main__':
+    # 测试get_instrument
+    print(get_instrument('2022-01-01 00:00:00'))
+    print(get_instrument('2022-01-01 00:00:00', products = ['IC']))
+    print(get_instrument('2022-01-01 00:00:00', '2022-03-20 00:00:00', products = ['IC']))
+   
+    
+    
             

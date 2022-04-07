@@ -1,8 +1,10 @@
 #! /usr/bin/env python
-# -*- coding:utf8 -*-
+# -*- coding: utf-8 -*-
 
+from matplotlib.font_manager import FontProperties
 import mplfinance as mpf
 import matplotlib.pyplot as plt
+import matplotlib
 import pandas as pd
 import numpy as np
 
@@ -126,12 +128,20 @@ def draw_scatter(xlabel='X', ylabel='Y', xscope={}, yscope={}, data=[]):
 def draw_line(data, title='', xlabel='', ylabel='', plot_info={'x':'x','y':[{'key':'y','label':''}]}, show_grid=False):
   plt.style.use('ggplot')
   plt.figure(figsize=(10,5))
-  plt.title(title)
-  plt.xlabel(xlabel)
-  plt.ylabel(ylabel)
+  plt.title(title, fontproperties='SimHei')
+  plt.xlabel(xlabel, fontproperties='SimHei')
+  plt.ylabel(ylabel, fontproperties='SimHei')
   for y in plot_info.get('y'):
     plt.plot(data[plot_info.get('x')],data[y.get('key')],label=y.get('label'))
   plt.legend()
   plt.grid(show_grid)
   plt.show()
+  
+if __name__ == '__main__':
+      trans_info = {
+          'amount':[100,105,120,98,110],
+          'time':['2022-03-28','2022-03-29','2022-03-30','2022-03-31','2022-04-01']
+      }
+      data = pd.DataFrame(trans_info)
+      draw_line(data,'资金曲线','日期','资金余额',{'x':'time','y':[{'key':'amount','label':'资金余额'}]})
   

@@ -147,6 +147,29 @@ profit_rate DECIMAL(10,2),
 PRIMARY KEY(id)
 );
 
+-- future_instrument_list
+--期货合约列表
+CREATE TABLE IF NOT EXISTS future_instrument_list
+(
+product VARCHAR(10),
+instrument  VARCHAR(6),
+start_time VARCHAR(20),
+end_time  VARCHAR(20),
+unique(product, instrument)
+);
+
+-- stock_statistics
+-- 股票统计表
+CREATE TABLE IF NOT EXISTS stock_statistics
+(
+trade_date VARCHAR(10),
+rising_count INT,
+falling_count  INT,
+flat_count  INT,
+PRIMARY KEY(trade_date)
+);
+
+
 insert into factor_case values ('MeanInflectionPoint_5_20210101_20210929','MeanInflectionPoint','5','20210101','20210929');
 insert into factor_case values ('MeanInflectionPoint_20_20210101_20211111','MeanInflectionPoint','20','20210101','20211111');
 insert into factor_case values ('MeanPenetration_20_20210101_20210929','MeanPenetration','20','20210101','20210929');

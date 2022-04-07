@@ -41,9 +41,6 @@ def pre_check():
     log_info('Validate data')
     validate_data_integrity()
     
-    #3
-    log_info('Create statistic')
- 
 @run_with_timecost   
 def do_correlation_analysis(factor):
     data = FileUtils.get_file_by_ts_code('603882.SH', is_reversion = True)
@@ -113,7 +110,7 @@ if __name__ == '__main__':
     # factor = OBVTrend([0])
     # do_correlation_analysis(factor)
     # 单一因子模拟
-    run_single_factor_simulation('factor.trend_factor', 'MeanInflectionPoint_10_20210101_20211214', False)
+    # run_single_factor_simulation('factor.trend_factor', 'MeanInflectionPoint_10_20210101_20211214', False)
     # 复合因子模拟
     # factor_list = []
     # factor_list.append(MeanPenetration([20]))
