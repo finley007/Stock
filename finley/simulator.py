@@ -8,6 +8,7 @@ from abc import ABCMeta, abstractclassmethod
 
 from persistence import DaoMysqlImpl, FileUtils
 from visualization import draw_line
+import constants
 
 
 #仿真交易类
@@ -87,7 +88,8 @@ class ShortAction(Action):
         return "做空"
     
     def get_profit(self):
-        return self.get_open_price() - self.get_close_price()
+        charge_rate = float(constants.TRANSACTION_CHARGE_RATE)
+        return self.get_open_price() * (1 - charge_rate) - self.get_close_price() * (1 + charge_rate)
     
     def init_stop_loss_price(self):
         self._stop_loss_price = self._open_price + self._open_price * (1 - self._stop_loss_rate)
@@ -124,7 +126,8 @@ class LongAction(Action):
         return "做多"
     
     def get_profit(self):
-        return self.get_close_price() - self.get_open_price()
+        charge_rate = float(constants.TRANSACTION_CHARGE_RATE)
+        return self.get_close_price() * (1 - charge_rate) - self.get_open_price() * (1 + charge_rate)
     
     def init_stop_loss_price(self):
         self._stop_loss_price = self._open_price * self._stop_loss_rate
@@ -550,17 +553,20 @@ def print_simulate_result(factor, data, action_records, start_date, end_date, ve
 def capital_curve_simulate(initial_capital_amount, trans_amout, factor, start_time, end_time='', products=[]):
     # 获取时间段内的所有合约
     instrument = get_instrument(start_time, end_time, products)
+    charge_rate = float(constants.TRANSACTION_CHARGE_RATE)
     simulator = FutrueSimulator()
     data = FileUtils.get_file_by_product_and_instrument(instrument[0][0], instrument[0][1])
     data['assets'] = initial_capital_amount
     action_records = simulator.simulate(factor, data)
     for action in action_records:
+        #做多
         if isinstance(action, LongAction):
-            data.loc[(data.index >= action.get_open_date()) & (data.index <= action.get_close_date()), 'assets'] = data['assets'] - trans_amout * action.get_open_price() + trans_amout * data['close']
-            data.loc[data.index > action.get_close_date(),'assets'] = data['assets'] - trans_amout * action.get_open_price() + trans_amout * action.get_close_price()
+            data.loc[(data.index >= action.get_open_date()) & (data.index <= action.get_close_date()), 'assets'] = data['assets'] - trans_amout * action.get_open_price() * (charge_rate + 1)  + trans_amout * data['close'] * (1 - charge_rate)
+            data.loc[data.index > action.get_close_date(),'assets'] = data['assets'] - trans_amout * action.get_open_price() * (1 + charge_rate) + trans_amout * action.get_close_price() * (1 - charge_rate)
+        #做空
         else:
-            data.loc[(data.index >= action.get_open_date()) & (data.index <= action.get_close_date()), 'assets'] = data['assets'] + trans_amout * action.get_open_price() - trans_amout * data['close']
-            data.loc[data.index > action.get_close_date(),'assets'] = data['assets'] + trans_amout * action.get_open_price() - trans_amout * action.get_close_price()
+            data.loc[(data.index >= action.get_open_date()) & (data.index <= action.get_close_date()), 'assets'] = data['assets'] + trans_amout * action.get_open_price() * (1 - charge_rate) - trans_amout * data['close'] * (1 + charge_rate)
+            data.loc[data.index > action.get_close_date(),'assets'] = data['assets'] + trans_amout * action.get_open_price() * (1 - charge_rate) - trans_amout * action.get_close_price() * (1 + charge_rate)
     data['time'] = data.index
     draw_line(data,'Capital Curve','Time','Balance',{'x':'time','y':[{'key':'assets','label':'资金余额'}]})     
     print('aa')

@@ -119,13 +119,14 @@ class EnvelopePenetration(Factor):
         close_indicator_key = self._envelope_indicator.get_middle_value_key(self._params[0])
         data['last_close'] = data['close'].shift(1)
         #只取穿透点
-        data[self._factor_code] = 0
-        data.loc[(data['close'] > data[open_indicator_key]) & (data['last_close'] < data[open_indicator_key]), self._factor_code] = data['close'] - data['last_close']
-        data.loc[(data['close'] < data[close_indicator_key]) & (data['last_close'] > data[close_indicator_key]), self._factor_code] = data['close'] - data['last_close']
+        data[self.get_factor_code()] = 0
+        data.loc[(data['close'] > data[open_indicator_key]) & (data['last_close'] < data[open_indicator_key]), self.get_factor_code()] = data['close'] - data['last_close']
+        data.loc[(data['close'] < data[close_indicator_key]) & (data['last_close'] > data[close_indicator_key]), self.get_factor_code()] = data['close'] - data['last_close']
         return data  
     
     def get_envelope_indicator(self):
         return self._envelope_indicator
+    
     
 # 均值百分比包络线
 class EnvelopePenetration_MeanPercentage(EnvelopePenetration):
@@ -198,17 +199,17 @@ if __name__ == '__main__':
     # draw_analysis_curve(data[(data['trade_date'] >= '20210101')], volume = False, show_signal = True, signal_keys = [factor.get_factor_code(),'mean.20'])
     # print('aa')
     # 期货
-    # data = FileUtils.get_file_by_product_and_instrument('SM', 'SM1601')
-    # factor = MeanInflectionPoint([20])
-    # # factor = MeanPenetration([20])
+    # data = FileUtils.get_file_by_product_and_instrument('IF', 'IF2204')
+    # # factor = MeanInflectionPoint([20])
+    # factor = MeanPenetration([20])
     # # factor = MeanTrend([20])
     # # factor = EnvelopePenetration_MeanPercentage([20])
     # # factor = EnvelopePenetration_ATR([20])
     # # factor = EnvelopePenetration_Keltner([20])
     # # factor = AdvanceEnvelopePenetration_Keltner([20])
     # data = factor.caculate(data)
-    # draw_analysis_curve(data[(data.index >= '2015-09-28 10:00:00') & (data.index <= '2015-10-09 11:30:00')], volume = True, show_signal = True, signal_keys = [factor.get_factor_code(),'mean.20'])
-    # # draw_analysis_curve(data, volume = True, show_signal = True, signal_keys = [factor.get_factor_code(),'mean.20'])
+    # # draw_analysis_curve(data[(data.index >= '2015-09-28 10:00:00') & (data.index <= '2015-10-09 11:30:00')], volume = True, show_signal = True, signal_keys = [factor.get_factor_code(),'mean.20'])
+    # draw_analysis_curve(data, volume = True, show_signal = True, signal_keys = [factor.get_factor_code(),'mean.20'])
     # print('aa')
     
     #模拟
@@ -220,22 +221,20 @@ if __name__ == '__main__':
     # factor = MeanPenetration([20])
     # # factor = EnvelopePenetration_MeanPercentage([20])
     # # factor = EnvelopePenetration_ATR([20])
-    # # factor = MACDPenetration([])
     # # factor = EnvelopePenetration_Keltner([20])
     # simulator = StockSimulator()
     # simulator.simulate(factor, data, start_date = '20210101', save = False)
     # simulate(factor, data, start_date = '20210101', save = False)
     #期货
-    # data = FileUtils.get_file_by_product_and_instrument('SM', 'SM1601')
+    # data = FileUtils.get_file_by_product_and_instrument('IF', 'IF2204')
     # factor = MeanInflectionPoint([20])
-    # # # factor = MeanTrend([20])
+    # # factor = MeanTrend([20])
     # # factor = MeanPenetration([20])
-    # # # factor = EnvelopePenetration_MeanPercentage([20])
-    # # # factor = EnvelopePenetration_ATR([20])
-    # # # factor = MACDPenetration([])
-    # # # factor = EnvelopePenetration_Keltner([20])
+    # # factor = EnvelopePenetration_MeanPercentage([20])
+    # # factor = EnvelopePenetration_ATR([20])
+    # # factor = EnvelopePenetration_Keltner([20])
     # simulator = FutrueSimulator()
-    # simulator.simulate(factor, data, '2015-09-28 10:00:00', '2015-10-09 11:30:00', save = False)
+    # simulator.simulate(factor, data, save = False)
     
     
     #计算两个因子相关性
@@ -258,4 +257,4 @@ if __name__ == '__main__':
      # 测试 capital_curve_simulate
     initial_capital_amount = 1000000
     factor = MeanInflectionPoint([10])
-    capital_curve_simulate(initial_capital_amount, 30, factor, '2021-11-10 00:00:00', products = ['FU'])
+    capital_curve_simulate(initial_capital_amount, 50, factor, '2021-11-10 00:00:00', products = ['FU'])

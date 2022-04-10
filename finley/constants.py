@@ -24,6 +24,7 @@ DB_PASSWORD = config.get('common', 'db_password')
 DB_NAME = config.get('common', 'db_name')
 
 ANALYSIS_RESULT_TOP_N = config.get('common', 'analysis_result_top_n')
+TRANSACTION_CHARGE_RATE = config.get('common', 'transaction_charge_rate')
 
 STOCK_INFO_LINK = config.get('sina', 'stock_info_link_template')
 
