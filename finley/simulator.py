@@ -111,8 +111,8 @@ class ShortAction(Action):
             else:
                 #先处理止损，保守算法，因为最高价和最低价的先后顺序从k线图上已经无法获得，都先处理止损
                 if (row['high'] > self._stop_loss_price):
-                    if (row['low'] > self._stop_loss_price):
-                        self._stop_loss_price = row['low']
+                    # if (row['low'] > self._stop_loss_price):
+                    self._stop_loss_price = row['high']
                     self._stop_loss_date = row['trade_date']
                     break
                 else:
@@ -149,8 +149,8 @@ class LongAction(Action):
             else:
                 #先处理止损，保守算法，因为最高价和最低价的先后顺序从k线图上已经无法获得，都先处理止损
                 if (row['low'] < self._stop_loss_price):
-                    if (row['high'] < self._stop_loss_price):
-                        self._stop_loss_price = row['high']
+                    # if (row['high'] < self._stop_loss_price):
+                    self._stop_loss_price = row['low']
                     self._stop_loss_date = row['trade_date']
                     break
                 else:

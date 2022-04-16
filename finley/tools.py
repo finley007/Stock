@@ -15,6 +15,10 @@ def get_current_time():
 def parse_time(time_str):
     return datetime.strptime(time_str, '%Y-%m-%d %H:%M:%S') 
 
+def date_to_time(date_str):
+    time = datetime.strptime(date_str,'%Y%m%d')
+    return format_time(time)
+
 def format_time(time):
     return time.strftime('%Y-%m-%d %H:%M:%S')
 
@@ -81,4 +85,5 @@ if __name__ == '__main__':
     # print(to_params('25.45'))
     # print(to_params('25|24|23'))
     # get_all_class('factor.momentum_factor')
-    print(add_minutes('2021-01-08 09:33:00', 1))
+    # print(add_minutes('2021-01-08 09:33:00', 1))
+    print(date_to_time('20220101'))

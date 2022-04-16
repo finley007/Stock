@@ -226,8 +226,8 @@ if __name__ == '__main__':
     # simulator.simulate(factor, data, start_date = '20210101', save = False)
     # simulate(factor, data, start_date = '20210101', save = False)
     #期货
-    # data = FileUtils.get_file_by_product_and_instrument('IF', 'IF2204')
-    # factor = MeanInflectionPoint([20])
+    # data = FileUtils.get_file_by_product_and_instrument('IH', 'IH2109')
+    # factor = MeanInflectionPoint([10])
     # # factor = MeanTrend([20])
     # # factor = MeanPenetration([20])
     # # factor = EnvelopePenetration_MeanPercentage([20])

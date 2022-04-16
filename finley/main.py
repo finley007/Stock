@@ -18,7 +18,7 @@ from synchronization import incremental_synchronize_stock_daily_data, synchroniz
 from simulator import StockSimulator, FutrueSimulator 
 from machinelearning import MachineLearn, CompoundFactor, TrainingModel
 from log import log_info
-from tools import run_with_timecost, create_instance, to_params
+from tools import run_with_timecost, create_instance, to_params, date_to_time
 from validator import validate_data_integrity
 
 
@@ -62,7 +62,8 @@ def run_single_factor_simulation(package, factor_case_code, is_stock = True):
             simulator.simulate(factor, data, factor_case[0][3])
     else:
         simulator = FutrueSimulator()
-        instrument_list = persistence.select("select product, instrument from future_instrument_list where instrument not in (select ts_code from simulation_result where type = 'FUTURE')")
+        start_time = date_to_time(factor_case[0][3])
+        instrument_list = persistence.select("select product, instrument from future_instrument_list where instrument not in (select ts_code from simulation_result where type = 'FUTURE') and start_time >= '" + start_time + "'")
         for instrument in instrument_list:
             data = FileUtils.get_file_by_product_and_instrument(instrument[0], instrument[1])
             simulator.simulate(factor, data)
@@ -105,12 +106,12 @@ def run_retro_select_stock(factor_list, create_date):
         
         
 if __name__ == '__main__':
-    pre_check()
+    # pre_check()
     # 相关性分析
     # factor = OBVTrend([0])
     # do_correlation_analysis(factor)
     # 单一因子模拟
-    # run_single_factor_simulation('factor.trend_factor', 'MeanInflectionPoint_10_20210101_20211214', False)
+    run_single_factor_simulation('factor.trend_factor', 'MeanInflectionPoint_10_20210101_20211214', False)
     # 复合因子模拟
     # factor_list = []
     # factor_list.append(MeanPenetration([20]))

@@ -169,6 +169,47 @@ flat_count  INT,
 PRIMARY KEY(trade_date)
 );
 
+-- real_time_tick
+-- 实时交易数据表
+CREATE TABLE IF NOT EXISTS real_time_tick
+(
+  tick timestamp(6),
+  instrument_id VARCHAR(20),
+  last_price FLOAT,
+  open_interest INT,
+  open_interest_delta INT,
+  trade_turnover bigint,
+  trade_volume INT,
+  entry_volume INT,
+  exit_volume INT,
+  trade_type smallint,
+  bid_price1 FLOAT,
+  bid_price2 FLOAT,
+  bid_price3 FLOAT,
+  bid_price4 FLOAT,
+  bid_price5 FLOAT,
+  ask_price1 FLOAT,
+  ask_price2 FLOAT,
+  ask_price3 FLOAT,
+  ask_price4 FLOAT,
+  ask_price5 FLOAT,
+  bid_volume1 INT,
+  bid_volume2 INT,
+  bid_volume3 INT,
+  bid_volume4 INT,
+  bid_volume5 INT,
+  ask_volume1 INT,
+  ask_volume2 INT,
+  ask_volume3 INT,
+  ask_volume4 INT,
+  ask_volume5 INT,
+  pre_delta FLOAT,
+  curr_delta FLOAT,
+  upper_limit_price FLOAT,
+  lower_limit_price FLOAT,
+  PRIMARY KEY (tick, instrument_id)
+);
+
 
 insert into factor_case values ('MeanInflectionPoint_5_20210101_20210929','MeanInflectionPoint','5','20210101','20210929');
 insert into factor_case values ('MeanInflectionPoint_20_20210101_20211111','MeanInflectionPoint','20','20210101','20211111');
