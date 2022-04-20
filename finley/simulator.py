@@ -14,7 +14,7 @@ import constants
 #仿真交易类
 class Action(metaclass = ABCMeta):
     
-    _stop_loss_rate = 0.9
+    _stop_loss_rate = 0.95
     
     _open_date = ''
     _close_date = ''

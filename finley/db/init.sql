@@ -210,6 +210,22 @@ CREATE TABLE IF NOT EXISTS real_time_tick
   PRIMARY KEY (tick, instrument_id)
 );
 
+-- real_time_tick
+-- 实时交易数据表
+CREATE TABLE IF NOT EXISTS 1_min_k_line
+(
+time    timestamp(6),
+open        FLOAT,
+close            FLOAT,
+low              FLOAT,
+high             FLOAT,
+volume           FLOAT,
+open_interest    FLOAT,
+product           VARCHAR(10),
+instrument        VARCHAR(20),
+PRIMARY KEY (time, instrument)
+);
+
 
 insert into factor_case values ('MeanInflectionPoint_5_20210101_20210929','MeanInflectionPoint','5','20210101','20210929');
 insert into factor_case values ('MeanInflectionPoint_20_20210101_20211111','MeanInflectionPoint','20','20210101','20211111');

@@ -4,6 +4,7 @@
 from abc import ABCMeta, abstractclassmethod
 
 import pandas as pd
+import connectorx as cx
 import pymysql
 import gzip
 import _pickle as cPickle
@@ -107,7 +108,17 @@ class Dao(metaclass = ABCMeta):
     def get_learning_model(self, model_id):
         pass
     
+    @abstractclassmethod
+    def get_future_tick_data(self, instrument, start_date = '', end_date = ''):
+        pass
+    
+    @abstractclassmethod
+    def get_future_kline_data(self, instrument, start_date = '', end_date = ''):
+        pass
+    
 class DaoMysqlImpl(Dao):   
+    
+    _db_url = '{}://{}:{}@{}:{}/{}'.format(constants.DB_TYPE, constants.DB_USERNAME, constants.DB_PASSWORD, constants.DB_HOST, constants.DB_PORT, constants.DB_NAME) 
     
     def __get_connection(self):
         conn = pymysql.connect(host = constants.DB_HOST, user = constants.DB_USERNAME, passwd = constants.DB_PASSWORD)
@@ -166,6 +177,26 @@ class DaoMysqlImpl(Dao):
         result = self.select('select model from learning_model where id = ' + str(model_id))
         return json.loads(result[0][0])
     
+    def get_future_tick_data(self, instrument, start_date = '', end_date = ''):
+        sql = "select * from real_time_tick where instrument_id = '" + instrument + "'"
+        if (start_date != ''):
+            sql = sql + " and tick >= '" + start_date + "'"
+        if (end_date != ''):
+            sql = sql + " and tick <= '" + end_date + "'"
+        sql = sql + " order by tick"
+        data = cx.read_sql(self._db_url, sql)
+        return data
+    
+    def get_future_kline_data(self, instrument, unit = 1, start_date = '', end_date = ''):
+        sql = "select * from 1_min_k_line where instrument = '" + instrument + "'"
+        if (start_date != ''):
+            sql = sql + " and time >= '" + start_date + "'"
+        if (end_date != ''):
+            sql = sql + " and time <= '" + end_date + "'"
+        sql = sql + " order by time"
+        data = cx.read_sql(self._db_url, sql)
+        return data
+    
 if __name__ == '__main__':
     # dao = DaoMysqlImpl()
     # print(dao.select('select * from static_stock_list'))
@@ -184,10 +215,13 @@ if __name__ == '__main__':
     # FileUtils.copy_file('/Users/finley/Projects/Stock/origin/AL/AL2205-1m.pkl', '/Users/finley/Projects/Stock/data/future/AL/AL2205-1m.pkl')
     
     # 拷贝
-    product_list = ['A','AG','AL','AP','AU','BU','C','CF','CS','CU','EB','EG','FG','FU','HC','I','IC','IF','IH','J','JD','JM','L','LU','M','MA','NI','OI','P','PG','PP','RB','RM','RU','SA','SC','SF','SM','SP','SR','T','TA','TF','V','Y','ZC','ZN']
-    for product in product_list:
-        files = list(FileUtils.search_file('*-1m.pkl', '/Users/finley/Projects/Stock/origin/' + product + '/'))
-        for file in files:
-            target_files = list(FileUtils.search_file(file.split('/')[7], '/Users/finley/Projects/Stock/data/future/' + product + '/'))
-            if (len(target_files) == 0):
-                FileUtils.copy_file('/Users/finley/Projects/Stock/origin/' + product + '/' + file.split('/')[7], '/Users/finley/Projects/Stock/data/future/' + product + '/' + file.split('/')[7])
+    # product_list = ['A','AG','AL','AP','AU','BU','C','CF','CS','CU','EB','EG','FG','FU','HC','I','IC','IF','IH','J','JD','JM','L','LU','M','MA','NI','OI','P','PG','PP','RB','RM','RU','SA','SC','SF','SM','SP','SR','T','TA','TF','V','Y','ZC','ZN']
+    # for product in product_list:
+    #     files = list(FileUtils.search_file('*-1m.pkl', '/Users/finley/Projects/Stock/origin/' + product + '/'))
+    #     for file in files:
+    #         target_files = list(FileUtils.search_file(file.split('/')[7], '/Users/finley/Projects/Stock/data/future/' + product + '/'))
+    #         if (len(target_files) == 0):
+    #             FileUtils.copy_file('/Users/finley/Projects/Stock/origin/' + product + '/' + file.split('/')[7], '/Users/finley/Projects/Stock/data/future/' + product + '/' + file.split('/')[7])
+    
+    dao = DaoMysqlImpl()
+    print(dao.get_future_data('rb2210', '2022-04-11 09:00:00', '2022-04-12 09:03:28'))

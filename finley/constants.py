@@ -18,7 +18,9 @@ FUTURE_DATA_PATH = DATA_PATH + 'future/'
 WORK_PATH = config.get('common', 'work_path')
 TEMP_PATH = config.get('common', 'temp_path')
 
+DB_TYPE = config.get('common', 'db_type')
 DB_HOST = config.get('common', 'db_host')
+DB_PORT = int(config.get('common', 'db_port'))
 DB_USERNAME = config.get('common', 'db_username')
 DB_PASSWORD = config.get('common', 'db_password')
 DB_NAME = config.get('common', 'db_name')

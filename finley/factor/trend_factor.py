@@ -11,6 +11,7 @@ from visualization import draw_analysis_curve
 from indicator import MovingAverage, ATREnvelope, MeanPercentageEnvelope, KeltnerEnvelope, AdvanceKeltnerEnvelope
 from simulator import StockSimulator, FutrueSimulator, capital_curve_simulate
 from factor.base_factor import Factor
+from financetools import create_k_line
 
 # 移动平均线拐点 
 class MeanInflectionPoint(Factor):
@@ -200,16 +201,17 @@ if __name__ == '__main__':
     # print('aa')
     # 期货
     # data = FileUtils.get_file_by_product_and_instrument('IF', 'IF2204')
-    # # factor = MeanInflectionPoint([20])
-    # factor = MeanPenetration([20])
+    # data = create_k_line('RB2210')
+    # factor = MeanInflectionPoint([10])
+    # # factor = MeanPenetration([20])
     # # factor = MeanTrend([20])
     # # factor = EnvelopePenetration_MeanPercentage([20])
     # # factor = EnvelopePenetration_ATR([20])
     # # factor = EnvelopePenetration_Keltner([20])
     # # factor = AdvanceEnvelopePenetration_Keltner([20])
     # data = factor.caculate(data)
-    # # draw_analysis_curve(data[(data.index >= '2015-09-28 10:00:00') & (data.index <= '2015-10-09 11:30:00')], volume = True, show_signal = True, signal_keys = [factor.get_factor_code(),'mean.20'])
-    # draw_analysis_curve(data, volume = True, show_signal = True, signal_keys = [factor.get_factor_code(),'mean.20'])
+    # draw_analysis_curve(data[(data.index >= '2022-04-11 10:40:00') & (data.index <= '2022-04-11 11:30:00')], volume = False, show_signal = True, signal_keys = [factor.get_factor_code()])
+    # # draw_analysis_curve(data, volume = True, show_signal = True, signal_keys = [factor.get_factor_code(),'mean.20'])
     # print('aa')
     
     #模拟
@@ -227,14 +229,16 @@ if __name__ == '__main__':
     # simulate(factor, data, start_date = '20210101', save = False)
     #期货
     # data = FileUtils.get_file_by_product_and_instrument('IH', 'IH2109')
-    # factor = MeanInflectionPoint([10])
-    # # factor = MeanTrend([20])
-    # # factor = MeanPenetration([20])
-    # # factor = EnvelopePenetration_MeanPercentage([20])
-    # # factor = EnvelopePenetration_ATR([20])
-    # # factor = EnvelopePenetration_Keltner([20])
-    # simulator = FutrueSimulator()
-    # simulator.simulate(factor, data, save = False)
+    data = create_k_line('RB2210')
+    factor = MeanInflectionPoint([20])
+    # factor = MeanTrend([20])
+    # factor = MeanPenetration([20])
+    # factor = EnvelopePenetration_MeanPercentage([20])
+    # factor = EnvelopePenetration_ATR([20])
+    # factor = EnvelopePenetration_Keltner([20])
+    simulator = FutrueSimulator()
+    simulator.simulate(factor, data, save = False)
+    # simulator.simulate(factor, data[(data.index >= '2022-04-11 10:40:00') & (data.index <= '2022-04-11 11:30:00')], save = False)
     
     
     #计算两个因子相关性
@@ -255,6 +259,6 @@ if __name__ == '__main__':
     # print(data)
     
      # 测试 capital_curve_simulate
-    initial_capital_amount = 1000000
-    factor = MeanInflectionPoint([10])
-    capital_curve_simulate(initial_capital_amount, 50, factor, '2021-11-10 00:00:00', products = ['FU'])
+    # initial_capital_amount = 1000000
+    # factor = MeanInflectionPoint([10])
+    # capital_curve_simulate(initial_capital_amount, 50, factor, '2021-11-10 00:00:00', products = ['FU'])
