@@ -130,15 +130,18 @@ unique(factor_code1, param_value1, factor_code2, param_value2, ts_code, create_d
 );
 
 --transation_record
-CREATE TABLE IF NOT EXISTS transation_record
+CREATE TABLE IF NOT EXISTS transaction_record
 (
 id VARCHAR(32),
 ts_code       VARCHAR(10),
 volume        INT,
-buy_price    DECIMAL(10,2),
-buy_date     VARCHAR(8),
-sell_price   DECIMAL(10,2),
-sell_date     VARCHAR(8),
+type       VARCHAR(10),  --LONG, SHORT
+status     VARCHAR(1),  --0未平层, 1已平仓
+open_price    DECIMAL(10,2),
+open_date     VARCHAR(32),
+close_price   DECIMAL(10,2),
+close_date     VARCHAR(32),
+stop_price   DECIMAL(10,2),
 factor_code VARCHAR(128),
 factor_value  VARCHAR(20),
 param_value  VARCHAR(10),

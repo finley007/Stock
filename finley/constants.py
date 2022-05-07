@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 # -*- coding:utf8 -*-
 
+from ctypes.wintypes import LONG
 import os
 from config import Config
 import logging
@@ -27,7 +28,14 @@ DB_NAME = config.get('common', 'db_name')
 
 ANALYSIS_RESULT_TOP_N = config.get('common', 'analysis_result_top_n')
 TRANSACTION_CHARGE_RATE = config.get('common', 'transaction_charge_rate')
+TRANSACTION_TIME = config.get('common', 'transaction_time')
 
 STOCK_INFO_LINK = config.get('sina', 'stock_info_link_template')
 
 EXCLUDED_FILES = config.get('common', 'exclude_files').split(',')
+
+TRADE_TYPE_LONG = 'LONG'
+TRADE_TYPE_SHORT = 'SHORT'
+
+OPEN_TRANSACTION_ACTION = 1
+CLOSE_TRANSACTION_ACTION = -1

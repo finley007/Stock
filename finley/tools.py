@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import time
 import webbrowser
 import inspect
+import constants
 
 def get_current_date():
     return datetime.now().strftime('%Y%m%d')
@@ -27,15 +28,43 @@ def get_time_base(time, unit):
         return time.replace(second = 0, microsecond = 0)
     return time
 
+def split_by_dash(str):
+    return str.split("_")
+
+def get_transaction_time(date):
+    time_range = constants.TRANSACTION_TIME.replace('xxx', date).split('｜') 
+    return list(map(split_by_dash, time_range))
+            
 def format_time(time):
     return time.strftime('%Y-%m-%d %H:%M:%S')
 
+# 仿真中获取得到交易信号之后实际的执行时间
 def add_minutes_by_str(time_str, mins):
     time = parse_time(time_str)
-    return format_time(time + timedelta(minutes=mins))
+    date_str = datetime.strftime(time, '%Y-%m-%d')
+    time_range = get_transaction_time(date_str)
+    new_time = format_time(time + timedelta(minutes=mins))
+    if (new_time > time_range[0][1] and new_time < time_range[1][0]):
+        return format_time(time + timedelta(minutes=(mins + 120)))
+    elif (new_time > time_range[1][1] and new_time < time_range[2][0]):
+        return format_time(time + timedelta(minutes=(mins + 360)))
+    elif (new_time > time_range[2][1]):
+        return format_time(time + timedelta(minutes=(mins + 600)))
+    else:
+        return new_time
 
 def add_minutes(time, mins):
-    return time + timedelta(minutes=mins)
+    date_str = datetime.strftime(time, '%Y-%m-%d')
+    time_range = get_transaction_time(date_str)
+    new_time = format_time(time + timedelta(minutes=mins))
+    if (new_time > time_range[0][1] and new_time < time_range[1][0]):
+        return time + timedelta(minutes=(mins + 120 - 1))
+    elif (new_time > time_range[1][1] and new_time < time_range[2][0]):
+        return time + timedelta(minutes=(mins + 360 - 1))
+    elif (new_time > time_range[2][1]):
+        return time + timedelta(minutes=(mins + 600 - 1))
+    else:
+        return time + timedelta(minutes=mins)
 
 def get_date_scope(start_date, end_date):
     start_date_time = datetime.strptime(start_date,'%Y%m%d')
@@ -95,5 +124,8 @@ if __name__ == '__main__':
     # get_all_class('factor.momentum_factor')
     # print(add_minutes('2021-01-08 09:33:00', 1))
     # print(date_to_time('20220101'))
-    time = parse_time('2022-04-12 09:03:27.500000', True)
-    print(get_time_base(time, 1))
+    # time = parse_time('2022-04-12 09:03:27.500000', True)
+    # print(get_time_base(time, 1))
+    # print(get_transaction_time('2022-04-12'))
+    print(add_minutes_by_str('2022-04-12 11:29:27', 5))
+    print(add_minutes_by_str('2022-04-12 14:59:27', 10))

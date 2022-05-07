@@ -16,7 +16,7 @@ from financetools import create_k_line
 # 移动平均线拐点 
 class MeanInflectionPoint(Factor):
     
-    _signal_delay = 2
+    signal_delay = 2
     factor_code = 'mean_inflection_point'
     version = '2.5'
     
@@ -229,15 +229,16 @@ if __name__ == '__main__':
     # simulate(factor, data, start_date = '20210101', save = False)
     #期货
     # data = FileUtils.get_file_by_product_and_instrument('IH', 'IH2109')
-    data = create_k_line('RB2210')
-    factor = MeanInflectionPoint([20])
+    data = create_k_line('RB2210', directly_from_db=True)
+    factor = MeanInflectionPoint([10])
     # factor = MeanTrend([20])
     # factor = MeanPenetration([20])
     # factor = EnvelopePenetration_MeanPercentage([20])
     # factor = EnvelopePenetration_ATR([20])
     # factor = EnvelopePenetration_Keltner([20])
     simulator = FutrueSimulator()
-    simulator.simulate(factor, data, save = False)
+    # simulator.simulate(factor, data, save = False)
+    simulator.print_action_matrix('RB2210', factor, data, only_action = False)
     # simulator.simulate(factor, data[(data.index >= '2022-04-11 10:40:00') & (data.index <= '2022-04-11 11:30:00')], save = False)
     
     

@@ -126,12 +126,15 @@ class DaoMysqlImpl(Dao):
         return conn
 
     def insert(self, sql, params=[]):
-        conn = self.__get_connection()
-        cur = conn.cursor()
-        insert = cur.executemany(sql, params)
-        cur.close()
-        conn.commit()
-        conn.close()
+        try:
+            conn = self.__get_connection()
+            cur = conn.cursor()
+            insert = cur.executemany(sql, params)
+            cur.close()
+            conn.commit()
+            conn.close()
+        except BaseException as ex:
+            print(ex)
         return insert
 
     def select(self, sql, params=[]):
@@ -195,8 +198,33 @@ class DaoMysqlImpl(Dao):
             sql = sql + " and time <= '" + end_date + "'"
         sql = sql + " order by time"
         data = cx.read_sql(self._db_url, sql)
+        data.index = data['time']
         return data
     
+    #获取最近的未平仓记录
+    def get_latest_opened_transaction(self, instrument):
+        sql = "select * from transaction_record where ts_code = '" + instrument + "'"
+        sql = sql + " and status = '0'"
+        data = cx.read_sql(self._db_url, sql)
+        return data
+    
+    #获取最新价格
+    def get_latest_price(self, instrument):
+        sql = "select * from real_time_tick where instrument_id = '" + instrument + "'"
+        sql = sql + " order by tick desc limit 1"
+        data = cx.read_sql(self._db_url, sql)
+        return data
+    
+    #更新止损价格
+    def update_stop_price(self, instrument, stop_price):
+        sql = "update transaction_record set stop_price = '" + str(stop_price) + "' where ts_code = '" + instrument + "' and status = '0'"
+        self.update(sql)
+        
+    #更新平仓记录
+    def update_close_action(self, id, close_price, close_date):
+        sql = "update transaction_record set close_price = '" + str(close_price) + "', close_date = '" + str(close_date) + "', status = '1' where id = '" + id + "'"
+        self.update(sql)
+        
 if __name__ == '__main__':
     # dao = DaoMysqlImpl()
     # print(dao.select('select * from static_stock_list'))

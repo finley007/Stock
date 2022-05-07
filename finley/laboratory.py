@@ -77,6 +77,15 @@ def test_parse_str():
     if (str.find("|") != -1):
         params = list(map(lambda str: int(str), str.split("|")))
         print(params)
+        
+def test_set():
+    my_set = set()
+    my_set.add("a")
+    my_set.add("a")
+    my_set.add("b")
+    print(my_set)
+    print("a" in my_set)
+    
     
     
 if __name__ == '__main__':
@@ -87,4 +96,5 @@ if __name__ == '__main__':
     # test_traversal_array()
     # test_list_2_string()
     # test_circular_backtracking()
-    test_parse_str()
+    # test_parse_str()
+    test_set()

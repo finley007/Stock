@@ -42,7 +42,7 @@ class Trade(Operation):
             date = args[5]
             persistence = DaoMysqlImpl()
             item = (trade_id, ts_code, volume, price, date, 0, '', factor_code, 0, param_value, 0, 0)
-            persistence.insert('insert into transation_record values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)', [item])
+            persistence.insert('insert into transaction_record values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)', [item])
         
 
 

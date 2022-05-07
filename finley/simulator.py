@@ -180,6 +180,14 @@ class Simulator(metaclass = ABCMeta):
         action_records = self.execute_simulate(data, factor, start_date, end_date)
         self.print_simulate_result(factor, data, action_records, start_date, end_date, factor.get_version(), save)
         return action_records
+    
+    #打印action矩阵
+    def print_action_matrix(self, ts_code, factor, data, only_action=True):
+        data = factor.caculate(data)
+        data.loc[:,'action'] = data.apply(lambda item:factor.get_action_mapping(item),axis=1)
+        if (only_action):
+            data = data[data['action'] != 0]
+        data.to_csv(constants.TEMP_PATH + ts_code + '.csv', sep='\t',index=False, header=None)
         
     #结果处理
     def print_simulate_result(self, factor, data, action_records, start_date, end_date, version, save = True):

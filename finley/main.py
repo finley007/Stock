@@ -78,7 +78,7 @@ def run_compound_factor_simulation(factor_list, model_id, start_date, ret_period
     stock_list = persistence.select("select ts_code from static_stock_list")
     for stock in stock_list:
         data = FileUtils.get_file_by_ts_code(stock[0], is_reversion = True)
-        simulate(factor, data, start_date)
+        # simulate(factor, data, start_date)
         
 @run_with_timecost    
 def run_position_analysis(package):
@@ -106,12 +106,12 @@ def run_retro_select_stock(factor_list, create_date):
         
         
 if __name__ == '__main__':
-    # pre_check()
+    pre_check()
     # 相关性分析
     # factor = OBVTrend([0])
     # do_correlation_analysis(factor)
     # 单一因子模拟
-    run_single_factor_simulation('factor.trend_factor', 'MeanInflectionPoint_10_20210101_20211214', False)
+    # run_single_factor_simulation('factor.trend_factor', 'MeanInflectionPoint_10_20210101_20211214', False)
     # 复合因子模拟
     # factor_list = []
     # factor_list.append(MeanPenetration([20]))

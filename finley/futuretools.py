@@ -12,6 +12,7 @@ import webbrowser
 
 import constants
 from persistence import FileUtils, DaoMysqlImpl
+from visualization import draw_analysis_curve
 
 #数据清洗
 def clean_data(data):
@@ -60,11 +61,22 @@ def init_all_product_instrument():
             item = (instrument[0], instrument[1], instrument[2], instrument[3])
             persistence.insert('insert into future_instrument_list values (%s,%s,%s,%s)', [item])
             
+#获取交易数据
+def get_data_by_product_and_instrument(product, instrument, from_file = True):
+    if (from_file):
+        return FileUtils.get_file_by_product_and_instrument(product, instrument)
+    else:
+        persistence = DaoMysqlImpl()
+        return persistence.get_future_kline_data(instrument) 
+    
     
 if __name__ == '__main__':
     # print(get_datetime_range('IF', 'IF1103'))
     # print(get_instrument_by_product('IF', ['IF1807','IF1809']))
     # print(get_instrument_info_by_product('IF'))
-    init_all_product_instrument()
+    # init_all_product_instrument()
+    data = get_data_by_product_and_instrument('RB', 'RB2210', False)
+    draw_analysis_curve(data, volume = True)
+    print('aa')
     
         
