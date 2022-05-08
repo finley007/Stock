@@ -567,7 +567,7 @@ def capital_curve_simulate(initial_capital_amount, trans_amout, factor, start_ti
     instrument = get_instrument(start_time, end_time, products)
     charge_rate = float(constants.TRANSACTION_CHARGE_RATE)
     simulator = FutrueSimulator()
-    data = FileUtils.get_file_by_product_and_instrument(instrument[0][0], instrument[0][1])
+    data = FileUtils.get_file_by_product_and_instrument(instrument[0][0], instrument[0][1], True)
     data['assets'] = initial_capital_amount
     action_records = simulator.simulate(factor, data)
     for action in action_records:
