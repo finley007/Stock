@@ -6,13 +6,14 @@
 1. 查看期货合约的日期时间区间
 """
 
-import datetime
+from datetime import datetime, timedelta
 import time
 import webbrowser
 
 import constants
 from persistence import FileUtils, DaoMysqlImpl
 from visualization import draw_analysis_curve
+import tools
 
 #数据清洗
 def clean_data(data):
@@ -42,7 +43,8 @@ def get_instrument_info_by_product(product, inst_list = []):
 
 def create_instrument_info(product, instrument):
     date_time_range = get_datetime_range(product, instrument)
-    return [product, instrument, date_time_range[0], date_time_range[1]]
+    trans_time_range = format_trans_time_range(get_transaction_time_range('IF', 'IF1103'))
+    return [product, instrument, date_time_range[0], date_time_range[1], trans_time_range]
 
 #获取全部产品
 def init_all_product_instrument():
@@ -58,8 +60,8 @@ def init_all_product_instrument():
     if (len(instrument_list) > 0):
         persistence.delete('delete from future_instrument_list')
         for instrument in instrument_list: 
-            item = (instrument[0], instrument[1], instrument[2], instrument[3])
-            persistence.insert('insert into future_instrument_list values (%s,%s,%s,%s)', [item])
+            item = (instrument[0], instrument[1], instrument[2], instrument[3], instrument[4])
+            persistence.insert('insert into future_instrument_list values (%s,%s,%s,%s,%s)', [item])
             
 #获取交易数据
 def get_data_by_product_and_instrument(product, instrument, from_file = True):
@@ -71,22 +73,46 @@ def get_data_by_product_and_instrument(product, instrument, from_file = True):
 
 #获取合约的交易时间    
 def get_transaction_time_range(product, instrument):
+    persistence = DaoMysqlImpl()
     data = FileUtils.get_file_by_product_and_instrument(product, instrument)
     data = clean_data(data)
     data['time'] = data.index
     start_time = data.idxmin()['time']
-    print(start_time)
+    start_date = tools.parse_date_from_time(start_time)
+    #获取合约生效的第二天
+    next_date = tools.date_format_convert(persistence.get_next_business_date(tools.date_format_convert(start_date,'%Y-%m-%d','%Y%m%d')),'%Y%m%d','%Y-%m-%d')
+    data['date'] = data['time'].map(tools.parse_date_from_time)
+    data = data[data['date'] == next_date]
+    data['time'] = data['time'].map(tools.parse_time_from_time)
+    time_list = data['time'].tolist()
+    time_range_start = time_list[0]
+    temp_time = datetime.strptime(time_range_start, '%H:%M:%S')
+    result = []
+    for time_str in time_list:
+        time = datetime.strptime(time_str, '%H:%M:%S')
+        if ((time - temp_time).seconds <= 60):
+            temp_time = time
+        else:
+            result.append([time_range_start, datetime.strftime(temp_time, '%H:%M:%S')])
+            time_range_start = time_str
+            temp_time = datetime.strptime(time_range_start, '%H:%M:%S')
+    result.append([time_range_start, datetime.strftime(temp_time, '%H:%M:%S')])
+    return result
     
-    
+def format_trans_time_range(time_range):
+    result = ''
+    for time in time_range:
+        result = result + 'xxx ' + time[0] + '_' + time[1] + '|'
+    return result[0:-1]
     
 if __name__ == '__main__':
     # print(get_datetime_range('IF', 'IF1103'))
     # print(get_instrument_by_product('IF', ['IF1807','IF1809']))
     # print(get_instrument_info_by_product('IF'))
-    # init_all_product_instrument()
+    init_all_product_instrument()
     # data = get_data_by_product_and_instrument('RB', 'RB2210', False)
     # draw_analysis_curve(data, volume = True)
-    get_transaction_time_range('IF', 'IF1103')
+    # print(format_trans_time_range(get_transaction_time_range('IF', 'IF1103')))
     print('aa')
     
         

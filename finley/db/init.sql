@@ -158,6 +158,7 @@ product VARCHAR(10),
 instrument  VARCHAR(6),
 start_time VARCHAR(20),
 end_time  VARCHAR(20),
+trans_time_range VARCHAR(128),
 unique(product, instrument)
 );
 
