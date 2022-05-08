@@ -53,10 +53,11 @@ class FileUtils(object):
         
     # 根据产品和合约获取文件
     @staticmethod
-    def get_file_by_product_and_instrument(product, instrument):
+    def get_file_by_product_and_instrument(product, instrument, add_product = False):
         data = pd.read_pickle(constants.FUTURE_DATA_PATH + product + '/' + instrument + '-1m.pkl')
-        data['product'] = product
-        data['instrument'] = instrument
+        if (add_product):
+            data['product'] = product
+            data['instrument'] = instrument
         return data
     
     # 获取指定目录下的所有文件

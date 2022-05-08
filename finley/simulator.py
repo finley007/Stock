@@ -389,7 +389,11 @@ class FutrueSimulator(Simulator):
     
     #获取执行时间
     def get_action_date(self, data, factor, factor_date):
-        return tools.add_minutes_by_str(factor_date, int(factor.get_signal_delay()))
+        #从操作物理时间直接改成操作逻辑时间
+        # return tools.add_minutes_by_str(factor_date, int(factor.get_signal_delay()))
+        index_list = data.index.tolist()
+        index = index_list.index(factor_date)
+        return index_list[index + factor.get_signal_delay()]
     
     #预处理
     def pre_handle(self, data):

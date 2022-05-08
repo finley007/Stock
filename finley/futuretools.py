@@ -68,6 +68,15 @@ def get_data_by_product_and_instrument(product, instrument, from_file = True):
     else:
         persistence = DaoMysqlImpl()
         return persistence.get_future_kline_data(instrument) 
+
+#获取合约的交易时间    
+def get_transaction_time_range(product, instrument):
+    data = FileUtils.get_file_by_product_and_instrument(product, instrument)
+    data = clean_data(data)
+    data['time'] = data.index
+    start_time = data.idxmin()['time']
+    print(start_time)
+    
     
     
 if __name__ == '__main__':
@@ -75,8 +84,9 @@ if __name__ == '__main__':
     # print(get_instrument_by_product('IF', ['IF1807','IF1809']))
     # print(get_instrument_info_by_product('IF'))
     # init_all_product_instrument()
-    data = get_data_by_product_and_instrument('RB', 'RB2210', False)
-    draw_analysis_curve(data, volume = True)
+    # data = get_data_by_product_and_instrument('RB', 'RB2210', False)
+    # draw_analysis_curve(data, volume = True)
+    get_transaction_time_range('IF', 'IF1103')
     print('aa')
     
         

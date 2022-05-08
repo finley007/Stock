@@ -237,8 +237,8 @@ if __name__ == '__main__':
     # factor = EnvelopePenetration_ATR([20])
     # factor = EnvelopePenetration_Keltner([20])
     simulator = FutrueSimulator()
-    # simulator.simulate(factor, data, save = False)
-    simulator.print_action_matrix('RB2210', factor, data, only_action = False)
+    simulator.simulate(factor, data, save = False)
+    # simulator.print_action_matrix('RB2210', factor, data, only_action = False)
     # simulator.simulate(factor, data[(data.index >= '2022-04-11 10:40:00') & (data.index <= '2022-04-11 11:30:00')], save = False)
     
     
