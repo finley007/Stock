@@ -127,15 +127,12 @@ class DaoMysqlImpl(Dao):
         return conn
 
     def insert(self, sql, params=[]):
-        try:
-            conn = self.__get_connection()
-            cur = conn.cursor()
-            insert = cur.executemany(sql, params)
-            cur.close()
-            conn.commit()
-            conn.close()
-        except BaseException as ex:
-            print(ex)
+        conn = self.__get_connection()
+        cur = conn.cursor()
+        insert = cur.executemany(sql, params)
+        cur.close()
+        conn.commit()
+        conn.close()
         return insert
 
     def select(self, sql, params=[]):

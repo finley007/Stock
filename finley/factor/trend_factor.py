@@ -228,18 +228,18 @@ if __name__ == '__main__':
     # simulator.simulate(factor, data, start_date = '20210101', save = False)
     # simulate(factor, data, start_date = '20210101', save = False)
     #期货
-    # data = FileUtils.get_file_by_product_and_instrument('IH', 'IH2109')
+    data = FileUtils.get_file_by_product_and_instrument('FU', 'FU2205')
     # data = create_k_line('RB2210', directly_from_db=True)
-    # factor = MeanInflectionPoint([10])
+    factor = MeanInflectionPoint([10])
     # factor = MeanTrend([20])
     # factor = MeanPenetration([20])
     # factor = EnvelopePenetration_MeanPercentage([20])
     # factor = EnvelopePenetration_ATR([20])
     # factor = EnvelopePenetration_Keltner([20])
-    # simulator = FutrueSimulator()
+    simulator = FutrueSimulator()
     # simulator.simulate(factor, data, save = False)
     # simulator.print_action_matrix('RB2210', factor, data, only_action = False)
-    # simulator.simulate(factor, data[(data.index >= '2022-04-11 10:40:00') & (data.index <= '2022-04-11 11:30:00')], save = False)
+    simulator.simulate(factor, data[(data.index >= '2021-11-10 21:00:00') & (data.index <= '2021-11-15 15:15:00')], save = False)
     
     
     #计算两个因子相关性
@@ -260,6 +260,6 @@ if __name__ == '__main__':
     # print(data)
     
      # 测试 capital_curve_simulate
-    initial_capital_amount = 1000000
-    factor = MeanInflectionPoint([10])
-    capital_curve_simulate(initial_capital_amount, 50, factor, '2021-11-10 00:00:00', products = ['FU'])
+    # initial_capital_amount = 1000000
+    # factor = MeanInflectionPoint([10])
+    # capital_curve_simulate(initial_capital_amount, 50, factor, '2021-11-10 00:00:00', products = ['FU'])

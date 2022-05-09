@@ -85,11 +85,12 @@ profit_count  INT,
 loss_count  INT,
 max_profit  DECIMAL(10,2),
 max_loss  DECIMAL(10,2),
-max_profit_date VARCHAR(8),
-max_loss_date VARCHAR(8),
+max_profit_date VARCHAR(30),
+max_loss_date VARCHAR(30),
 profit DECIMAL(10,2),
 profit_rate DECIMAL(10,2),
 version VARCHAR(10),
+created_date DATETIME not null default NOW(),
 PRIMARY KEY(id)
 );
 
