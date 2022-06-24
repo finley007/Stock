@@ -9,7 +9,7 @@ sys.path.insert(0,parentdir)
 from persistence import FileUtils
 from visualization import draw_analysis_curve
 from indicator import FI, MFI, OBV
-from simulator import simulate 
+from simulator import StockSimulator, FutrueSimulator, capital_curve_simulate, SimulationConfig
 from factor.base_factor import Factor
 import tools
 
@@ -75,22 +75,42 @@ class OBVTrend(Factor):
     
      
 if __name__ == '__main__':
-    #图像分析
-    data = FileUtils.get_file_by_ts_code('688778.SH', is_reversion = True)
-    # factor = FIPenetration([13])
-    factor = MFIPenetration([14])
+    # #图像分析
+    # 股票
+    data = FileUtils.get_file_by_ts_code('600438.SH', is_reversion = True)
+    factor = FIPenetration([26])
     data = factor.caculate(data)
     data['index_trade_date'] = pd.to_datetime(data['trade_date'])
     data = data.set_index(['index_trade_date'])
     data['volume'] = data['vol']
-    draw_analysis_curve(data[(data['trade_date'] > '20210101')], volume = True, show_signal = True, signal_keys = ['mfi.14','mfi_penetration'])
+    draw_analysis_curve(data[(data['trade_date'] >= '20220101')], volume = True, show_signal = True, signal_keys = [factor.get_factor_code(),'fi.26'])
     print('aa')
+    # 期货
+    # data = FileUtils.get_file_by_product_and_instrument('IF', 'IF2204')
+    # # data = create_k_line('RB2210')
+    # factor = FIPenetration([26])
+    # data = factor.caculate(data)
+    # draw_analysis_curve(data[(data.index >= '2022-03-09 10:40:00') & (data.index <= '2022-03-15 11:30:00')], volume = False, show_signal = True, signal_keys = [factor.get_factor_code(), 'mean.20'])
+    # # draw_analysis_curve(data, volume = True, show_signal = True, signal_keys = [factor.get_factor_code(),'mean.20'])
+    # print('aa')
     
     #模拟
-    # data = FileUtils.get_file_by_ts_code('601068.SH', is_reversion = True)
-    # # factor = FIPenetration([13])
-    # factor = MFIPenetration([14])
-    # simulate(factor, data, '20210101', save = False)
+    #股票
+    data = FileUtils.get_file_by_ts_code('002415.SZ', is_reversion = True)
+    factor = FIPenetration([26])
+    simulator = StockSimulator()
+    simulator.simulate(factor, data, start_date = '20220101', save = False)
+    #期货
+    # data = FileUtils.get_file_by_product_and_instrument('IF', 'IF2204')
+    # data['time'] = data.index
+    # # data = create_k_line('RB2210', directly_from_db=True)
+    # factor = FIPenetration([26])
+    # simulator = FutrueSimulator()
+    # config = SimulationConfig()
+    # config.set_reverse_open(False)
+    # simulator.simulate(factor, data, save = False, config = config)
+    # simulator.print_action_matrix('FU2205', factor, data[(data.index >= '2021-11-10 21:00:00') & (data.index <= '2021-11-15 15:15:00')], only_action = False)
+    # simulator.simulate(factor, data[(data.index >= '2022-03-09 10:40:00') & (data.index <= '2022-03-15 11:30:00')], save = False, config = config)
     
     #计算两个因子相关性
     # data = FileUtils.get_file_by_ts_code('600256.SH', is_reversion = True)

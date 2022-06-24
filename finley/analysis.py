@@ -341,7 +341,7 @@ if __name__ == '__main__':
     # 因子相关性分析
     # factor_correlation_analysis(factor1, factor2)
     # 打开选股结果
-    # open_selected_stocks_link('fdc48b14-ae38-11ec-8878-acde4800')
+    open_selected_stocks_link('6a2575a6-ebfc-11ec-92b0-acde4800')
     # 声称股票统计信息
-    create_stock_statistics('20220321')
+    # create_stock_statistics('20220321')
     

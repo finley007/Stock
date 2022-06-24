@@ -13,6 +13,7 @@ from visualization import draw_analysis_curve
 # 指标基类
 class Indicator(metaclass = ABCMeta):
     
+    key = ''
     _params = []
     
     #静态数据部分
@@ -22,6 +23,10 @@ class Indicator(metaclass = ABCMeta):
     
     def get_params(self):
         return self._params;
+    
+    @classmethod
+    def get_key(clz):
+        return clz.key
 
 # 包络线基类  
 class Envelope(Indicator):
@@ -45,15 +50,49 @@ class Envelope(Indicator):
 # 移动平均线
 class MovingAverage(Indicator):
     
+    key = 'mean'
+     
     def __init__(self, params):
         self._params = params
         
     def enrich(self, data):
         if self._params:
             for param in self._params:
-                data["mean."+str(param)] = data["close"].rolling(param).mean()
+                data[MovingAverage.key+"."+str(param)] = data["close"].rolling(param).mean()
         return data
     
+# 指数移动平均线
+class ExpMovingAverage(Indicator):
+    
+    key = 'mean'
+    
+    def __init__(self, params):
+        self._params = params
+        
+    def enrich(self, data):
+        if self._params:
+            for param in self._params:
+                data.loc[:,ExpMovingAverage.key+"."+str(param)] = data["close"].ewm(alpha=2 / (param + 1), adjust=False).mean()
+        return data.copy()
+    
+#一阶差分
+class FirstDiff(Indicator):
+    
+    key = 'first_diff'
+    
+    def __init__(self, params, indicator):
+        self._indicator = indicator
+        self._params = params
+        
+    def enrich(self, data):
+        data = self._indicator.enrich(data)
+        data[FirstDiff.key + '.' + self._indicator.get_key()] = data[self._indicator.get_key() + '.' + str(self._indicator.get_params()[0])] - data[self._indicator.get_key() + '.' + str(self._indicator.get_params()[0])].shift(1)
+        data[FirstDiff.key + '.' + self._indicator.get_key() + '.' + str(self.get_params()[0])] = data[FirstDiff.key + '.' + self._indicator.get_key()].ewm(alpha=2 / (self.get_params()[0] + 1), adjust=False).mean()
+        return data.copy()
+    
+    def get_key(self):
+        return FirstDiff.key + '.' + self._indicator.get_key()
+            
 # 自定义移动平均线
 class CustomMovingAverage(Indicator):
     
@@ -640,6 +679,8 @@ class ADX(Indicator):
         data['DI.SUM.'+str(self._params[0])] = data['DI+.'+str(self._params[0])] + data['DI-.'+str(self._params[0])]
         data['DI.SUB.'+str(self._params[0])] = abs(data['DI+.'+str(self._params[0])] - data['DI-.'+str(self._params[0])])
         data['DX.'+str(self._params[0])] = (data['DI.SUB.'+str(self._params[0])] * 100)/data['DI.SUM.'+str(self._params[0])]
+        # data['ADX.'+str(self._params[0])] = data['DX.'+str(self._params[0])].ewm(span=self._params[0], adjust=False).mean()
+        data['ADX.'+str(self._params[0])] = data['DX.'+str(self._params[0])].mean()
         return data 
     
     
@@ -720,17 +761,19 @@ class PVT(Indicator):
         
   
 if __name__ == '__main__':
-    data = FileUtils.get_file_by_ts_code('000533.SZ', True)
+    data = FileUtils.get_file_by_ts_code('600438.SH', True)
     # data = FileUtils.get_file_by_product_and_instrument('C', 'C1105')
     # data = data.iloc[::-1]
     # indicator = MovingAverage([20])
+    # data = indicator.enrich(data)
+    indicator1 = ExpMovingAverage([20])
     # data = indicator.enrich(data)
     # indicator = StandardDeviation([5])
     # data = indicator.enrich(data)
     # indicator = AtrMean([14])
     # data = indicator.enrich(data)
-    indicator = MeanPercentageEnvelope([5])
-    data = indicator.enrich(data)
+    # indicator = MeanPercentageEnvelope([5])
+    # data = indicator.enrich(data)
     # indicator = PricePercentageEnvelope([5])
     # data = indicator.enrich(data)
     # indicator = ATREnvelope([5])
@@ -763,7 +806,7 @@ if __name__ == '__main__':
     # data = indicator.enrich(data)
     # indicator = ADX([14])
     # data = indicator.enrich(data)
-    # indicator = FI([13])
+    # indicator = FI([26])
     # data = indicator.enrich(data)
     # indicator = OBV([])
     # data = indicator.enrich(data)
@@ -771,9 +814,11 @@ if __name__ == '__main__':
     # data = indicator.enrich(data)
     # indicator = PVT([])
     # data = indicator.enrich(data)
+    indicator = FirstDiff([13], indicator1)
+    data = indicator.enrich(data)
     data['index_trade_date'] = pd.to_datetime(data['trade_date'])
     data = data.set_index(['index_trade_date'])
     data['volume'] = data['vol']
-    draw_analysis_curve(data[data['trade_date'] > '20210101'], volume = True, show_signal = True, signal_keys = ['mean.5'])
+    draw_analysis_curve(data[data['trade_date'] > '20220101'], volume = True, show_signal = True, signal_keys = ['mean.20','first_diff.mean.13'])
     # draw_analysis_curve(data, volume = True, show_signal = False, signal_keys = ['mean.5'])
     print("aa")

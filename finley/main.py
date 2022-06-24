@@ -8,7 +8,7 @@ from factor.base_factor import Factor
 ray.init()
 
 from factor.my_factor import LowerHatch
-from factor.trend_factor import MeanInflectionPoint, MeanTrend, MeanPenetration
+from factor.trend_factor import MeanInflectionPoint, MeanTrend, MeanPenetration, MeanTrendFirstDiff
 from factor.momentum_factor import KDJRegression, RSIPenetration, DRFPenetration, SOPenetration
 from factor.volume_factor import MFIPenetration, OBVTrend
 from persistence import DaoMysqlImpl, FileUtils
@@ -50,24 +50,31 @@ def do_correlation_analysis(factor):
     print("aa")
 
 @run_with_timecost    
-def run_single_factor_simulation(package, factor_case_code, is_stock = True):
+def run_single_factor_simulation(package, factor_case_code, ts_code = '', is_stock = True):
     persistence = DaoMysqlImpl()
-    factor_case = persistence.select("select * from factor_case where id = '" + factor_case_code + "'")
+    factor_case = [('_'+factor_case_code).split('_')]
+    # factor_case = persistence.select("select * from factor_case where id = '" + factor_case_code + "'")
     factor = create_instance(package, factor_case[0][1], to_params(factor_case[0][2]))
     if (is_stock):
         simulator = StockSimulator()
-        stock_list = persistence.select("select ts_code from static_stock_list")
+        if (ts_code != ''):
+            stock_list = persistence.select("select ts_code from static_stock_list")
+        else:
+            stock_list = persistence.select("select ts_code from static_stock_list where ts_code = '" + ts_code + "'")
         for stock in stock_list:
             data = FileUtils.get_file_by_ts_code(stock[0], is_reversion = True)
             simulator.simulate(factor, data, factor_case[0][3])
     else:
         simulator = FutrueSimulator()
-        start_time = date_to_time(factor_case[0][3])
-        instrument_list = persistence.select("select product, instrument from future_instrument_list where instrument not in (select ts_code from simulation_result where type = 'FUTURE') and start_time >= '" + start_time + "'")
+        if (ts_code == ''):
+            start_time = date_to_time(factor_case[0][3])
+            instrument_list = persistence.select("select product, instrument from future_instrument_list where instrument not in (select ts_code from simulation_result where type = 'FUTURE') and start_time >= '" + start_time + "'")
+        else:
+            instrument_list = persistence.select("select product, instrument from future_instrument_list where instrument = '" + ts_code + "'")
         for instrument in instrument_list:
-            data = FileUtils.get_file_by_product_and_instrument(instrument[0], instrument[1])
+            data = FileUtils.get_file_by_product_and_instrument(instrument[0], instrument[1], True)
             simulator.simulate(factor, data)
-    time.sleep(300)
+    # time.sleep(300)
   
 @run_with_timecost      
 def run_compound_factor_simulation(factor_list, model_id, start_date, ret_period = 5):
@@ -110,8 +117,15 @@ if __name__ == '__main__':
     # 相关性分析
     # factor = OBVTrend([0])
     # do_correlation_analysis(factor)
+    # # 参数调优
+    # params = [4, 6, 8, 10, 12, 14, 16, 18, 20 ,22, 24, 26, 28 ,30,32,34,36,38,40]
+    # ts_code = 'IF2204'
+    # for period in params:
+    #     code = "MeanInflectionPoint_{period}".format(period=period)
+    #     run_single_factor_simulation('factor.trend_factor', code, ts_code, False)
+        # print(code)
     # 单一因子模拟
-    # run_single_factor_simulation('factor.trend_factor', 'MeanInflectionPoint_10_20210101_20211214', False)
+    # run_single_factor_simulation('factor.trend_factor', 'MeanTrendFirstDiff_10_20210101_20220614', False)
     # 复合因子模拟
     # factor_list = []
     # factor_list.append(MeanPenetration([20]))
@@ -123,10 +137,13 @@ if __name__ == '__main__':
     # data = select_stock([factor1, factor2])
     # factor = SOPenetration([10])
     # factor = MFIPenetration([14])
+    # factor = MeanTrendFirstDiff([10])
     # data = select_stock([factor])
     # 复盘
     # factor1 = KDJRegression([9])
     # factor2 = RSIPenetration([14])
+    factor = MeanTrendFirstDiff([10])
     # data = run_retro_select_stock([factor1, factor2], '20220218')
+    data = run_retro_select_stock([factor], '20220614')
     # 持股分析
     # run_position_analysis('factor.momentum_factor')

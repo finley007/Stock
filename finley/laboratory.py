@@ -87,6 +87,9 @@ def test_set():
     print("a" in my_set)
     
     
+def test_df_template_operation():
+    
+    
     
 if __name__ == '__main__':
     # test_ewm()

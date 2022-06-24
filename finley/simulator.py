@@ -15,7 +15,7 @@ import constants
 #仿真交易类
 class Action(metaclass = ABCMeta):
     
-    _stop_loss_rate = 0.95
+    _stop_loss_rate = 0.9
     
     _open_date = ''
     _close_date = ''
@@ -159,12 +159,25 @@ class LongAction(Action):
                         self._stop_loss_price = row['high'] * self._stop_loss_rate
 
 '''
+仿真器配置参数
+'''
+class SimulationConfig:
+    
+    _reverse_open = False
+    
+    def set_reverse_open(self, is_reverse_open):
+        self._reverse_open = is_reverse_open
+        
+    def get_reverse_open(self):
+        return self._reverse_open
+    
+'''
 仿真器基类
 '''
 class Simulator(metaclass = ABCMeta):
     
     #仿真主方法
-    def simulate(self, factor, data, start_date = '', end_date = '', save = True):
+    def simulate(self, factor, data, start_date = '', end_date = '', save = True, config = SimulationConfig()):
         #数据检查
         if (not self.validate(data)):
             return 
@@ -178,7 +191,7 @@ class Simulator(metaclass = ABCMeta):
         start_date = filter_data[1]
         end_date = filter_data[2]
         #仿真
-        action_records = self.execute_simulate(data, factor, start_date, end_date)
+        action_records = self.execute_simulate(data, factor, start_date, end_date, config)
         self.print_simulate_result(factor, data, action_records, start_date, end_date, factor.get_version(), save)
         return action_records
     
@@ -274,7 +287,7 @@ class Simulator(metaclass = ABCMeta):
     
     #执行仿真
     @abstractclassmethod
-    def execute_simulate(self, data, factor, start_date, end_date):
+    def execute_simulate(self, data, factor, start_date, end_date, config = SimulationConfig()):
         pass
     
     #获取代码
@@ -325,7 +338,7 @@ class StockSimulator(Simulator):
         return data
     
     #执行仿真
-    def execute_simulate(self, data, factor, start_date, end_date):
+    def execute_simulate(self, data, factor, start_date, end_date, config = SimulationConfig()):
         data.loc[:,'action'] = data.apply(lambda item:factor.get_action_mapping(item),axis=1)
         buy_action_list = data[data['action'] == 1]
         sell_action_list = data[data['action'] == -1]
@@ -404,7 +417,7 @@ class FutrueSimulator(Simulator):
         return data
     
     #执行仿真
-    def execute_simulate(self, data, factor, start_date, end_date):
+    def execute_simulate(self, data, factor, start_date, end_date, config = SimulationConfig()):
         data.loc[:,'action'] = data.apply(lambda item:factor.get_action_mapping(item),axis=1)
         action_list = data[data['action'] != 0]
         current_action = None
@@ -426,7 +439,14 @@ class FutrueSimulator(Simulator):
                     current_action.set_close_date(trade_date, data)
                     current_action.set_close_price(data[data['trade_date'] == trade_date]['low'])
                     action_records.append(current_action)
-                    current_action = None
+                    if (config.get_reverse_open()):
+                        #反向开仓
+                        if (action[1]['action'] == 1):
+                            current_action = LongAction(trade_date, data[data['trade_date'] == trade_date]['low'].iloc[0], data)
+                        else:
+                            current_action = ShortAction(trade_date, data[data['trade_date'] == trade_date]['low'].iloc[0], data)
+                    else:
+                        current_action = None
                 else:
                     continue
         return action_records
