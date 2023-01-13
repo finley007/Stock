@@ -129,24 +129,27 @@ class MultipleMeanPenetration(Factor):
     
     def get_action_mapping(self, item):
         return item[MultipleMeanPenetration.factor_code]
+    
+    def obtain_visual_monitoring_parameters(self):
+        return [factor.get_factor_code()]
  
 # 平均移动一级差分
 class MeanTrendFirstDiff(Factor):
     
     factor_code = 'mean_trend_first_diff'
-    version = '1.1'
+    version = '1.2'
     
     def __init__(self, params):
         self._params = params
     
     def caculate(self, data):
+        #计算20日均线
         indicator1 = ExpMovingAverage([20])
+        #计算均线差分和差分20日均值
         indicator = FirstDiff(self._params, indicator1)
         data = indicator.enrich(data)
          # 增量
-        data[MeanTrendFirstDiff.factor_code] = 0
-        data.loc[(data[indicator.get_key() + '.' + str(indicator.get_params()[0])].shift(1) < 0) & (data[indicator.get_key() + '.' + str(indicator.get_params()[0])] > 0), MeanTrendFirstDiff.factor_code] = data[indicator.get_key() + '.' + str(indicator.get_params()[0])] - data[indicator.get_key() + '.' + str(indicator.get_params()[0])].shift(1)
-        data.loc[(data[indicator.get_key() + '.' + str(indicator.get_params()[0])].shift(1) > 0) & (data[indicator.get_key() + '.' + str(indicator.get_params()[0])] < 0), MeanTrendFirstDiff.factor_code] = data[indicator.get_key() + '.' + str(indicator.get_params()[0])] - data[indicator.get_key() + '.' + str(indicator.get_params()[0])].shift(1)
+        data[MeanTrendFirstDiff.factor_code] = data[indicator.get_key() + '.' + str(indicator.get_params()[0])]
         return data   
     
     def get_action_mapping(self, item):
@@ -156,6 +159,9 @@ class MeanTrendFirstDiff(Factor):
             return -1
         else:
             return 0 
+        
+    def obtain_visual_monitoring_parameters(self):
+        return [factor.get_factor_code(),'mean.20','first_diff.mean.10']
        
 # 包络线突破因子基类
 class EnvelopePenetration(Factor):
@@ -239,7 +245,7 @@ class AdvanceEnvelopePenetration_Keltner(EnvelopePenetration_Keltner):
 if __name__ == '__main__':
     # #图像分析
     # 股票
-    data = FileUtils.get_file_by_ts_code('601318.SH', is_reversion = True)
+    data = FileUtils.get_file_by_ts_code('002090.SZ', is_reversion = True)
     # factor = MeanTrend([20])
     # factor = MultipleMeanPenetration([10, 20])
     # factor = MeanPenetration([20])
@@ -252,7 +258,7 @@ if __name__ == '__main__':
     data = factor.caculate(data)
     data['index_trade_date'] = pd.to_datetime(data['trade_date'])
     data = data.set_index(['index_trade_date'])
-    draw_analysis_curve(data[(data['trade_date'] >= '20220101')], volume = False, show_signal = True, signal_keys = [factor.get_factor_code(),'mean.20','first_diff.mean.10'])
+    draw_analysis_curve(data[(data['trade_date'] >= '20220901')], volume = False, show_signal = True)
     print('aa')
     # 期货
     # data = FileUtils.get_file_by_product_and_instrument('IF', 'IF2204')
@@ -271,7 +277,7 @@ if __name__ == '__main__':
     
     #模拟
     #股票
-    data = FileUtils.get_file_by_ts_code('601318.SH', is_reversion = True)
+    # data = FileUtils.get_file_by_ts_code('601318.SH', is_reversion = True)
     # factor = LowerHatch([5])
     # factor = MultipleMeanPenetration([10, 20])
     # factor = MeanInflectionPoint([20])
@@ -280,9 +286,9 @@ if __name__ == '__main__':
     # factor = EnvelopePenetration_MeanPercentage([20])
     # factor = EnvelopePenetration_ATR([20])
     # factor = EnvelopePenetration_Keltner([20])
-    factor = MeanTrendFirstDiff([10])
-    simulator = StockSimulator()
-    simulator.simulate(factor, data, start_date = '20220101', save = False)
+    # factor = MeanTrendFirstDiff([10])
+    # simulator = StockSimulator()
+    # simulator.simulate(factor, data, start_date = '20220101', save = False)
     #期货
     # data = FileUtils.get_file_by_product_and_instrument('IF', 'IF2204')
     # data['time'] = data.index

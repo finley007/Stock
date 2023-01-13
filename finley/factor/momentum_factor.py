@@ -109,6 +109,9 @@ class RSIPenetration(Factor):
         data.loc[(data['rsi.' + str(self._params[0])].shift(1) < self._high_limit) & (data['rsi.' + str(self._params[0])] > self._high_limit), RSIPenetration.factor_code] = -1
         return data 
     
+    def obtain_visual_monitoring_parameters(self):
+        return [factor.get_factor_code()]
+    
 # DRF突破
 class DRFPenetration(Factor):
     
@@ -154,6 +157,9 @@ class KDJRegression(Factor):
         #突破上限卖出
         data.loc[(data['D.' + str(self._params[0])].shift(1) < self._high_limit) & (data['D.' + str(self._params[0])] > self._high_limit), KDJRegression.factor_code] = -1
         return data 
+    
+    def obtain_visual_monitoring_parameters(self):
+        return [factor.get_factor_code()]
     
 # WR回归
 class WRRegression(Factor):

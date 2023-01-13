@@ -27,7 +27,7 @@ def synchronize_all_stock():
     stock_list = datasource.get_stock_list()
     if not stock_list.empty:
         persistence = DaoMysqlImpl()
-        result = persistence.delete('delete from static_stock_list_test')
+        result = persistence.delete('delete from static_stock_list')
         for index, row in stock_list.iterrows():
             # item = (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11], row[12], row[13], row[14])
             # persistence.insert('insert into static_stock_list_test values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)', [item])
@@ -36,7 +36,7 @@ def synchronize_all_stock():
 @ray.remote  
 def update_stock_info(row, persistence):
     item = (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11], row[12], row[13], row[14])
-    persistence.insert('insert into static_stock_list_test values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)', [item])
+    persistence.insert('insert into static_stock_list values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)', [item])
     
 # 复权
 def reverse_factor(ts_code, data, reversion_data):

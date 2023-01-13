@@ -33,7 +33,7 @@ def draw_analysis_curve(data, type='candle',
                         figscale=1,
                         show_signal=False,
                         signal_keys=[]):
-    mc = mpf.make_marketcolors(up='r', down='g')
+    mc = mpf.make_marketcolors(up='r', down='g', edge='inherit', wick='inherit')
     s = mpf.make_mpf_style(marketcolors=mc)
     if (show_signal):
         add_plot = mpf.make_addplot(data[signal_keys])

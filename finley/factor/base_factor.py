@@ -6,8 +6,12 @@ parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0,parentdir) 
 from abc import ABCMeta, abstractclassmethod
 import pandas as pd
+import numpy as np
 from scipy.stats import pearsonr
 import tools
+from persistence import FileUtils, DaoMysqlImpl
+from framework import Pagination
+from parallel import ProcessRunner
     
 '''
 因子基类
@@ -23,11 +27,85 @@ class Factor(metaclass = ABCMeta):
     def get_params(self):
         return self._params
     
+    def get_key(self, param):
+        """
+        根据参数获取因子关键字
+        """
+        return self.factor_code + '.' + str(param)
+
+    def get_keys(self):
+        """
+        获取所有因子关键字
+        """
+        return list(map(lambda param: self.factor_code + '.' + str(param), self._params))
+    
+    def get_signal(self, param):
+        """
+        根据参数获取信号量关键字
+        """
+        return self.factor_code + '.' + str(param) + '.signal'
+    
+    def get_signals(self):
+        """
+        获取所有信号量关键字
+        """
+        return list(map(lambda param: self.factor_code + '.' + str(param) + '.signal', self._params))
+    
     def score(self, data):
+        """
+        根据新的设计重新实现
+        """
         # data = data.loc[len(data)-self._params[0]:len(data)-1]
         data = self.caculate(data)
         #最近一天的最小参数
         return data.iloc[len(data) - 1][self.get_factor_code()]
+    
+    def analyze(self, stock_list=[], start_date = '', end_date = ''):
+        """
+        分析因子的值域，分布，均值
+        """
+        statistics_result = {}
+        statistics_data = {}
+        for param in self._params:
+            factor_value_list = []
+            if len(stock_list) == 0:
+                persistence = DaoMysqlImpl()
+                stock_list = persistence.get_stock_list()
+            pagination = Pagination(stock_list, page_size=20)
+            runner = ProcessRunner(10)
+            while pagination.has_next():
+                sub_list = pagination.next()
+                runner.execute(self.get_factor_value_list, args = (param, sub_list, start_date, end_date))
+                results = runner.get_results()
+                for result in results:
+                    factor_value_list = factor_value_list + result.get()
+            factor_value_array = np.array(factor_value_list)
+            statistics_result[param] = {
+            'max' : np.amax(factor_value_array),
+            'min' : np.amin(factor_value_array),
+            'range' : np.ptp(factor_value_array),
+            'mean' : np.mean(factor_value_array),
+            'median' : np.median(factor_value_array),
+            'std' : np.std(factor_value_array),
+            'var' : np.var(factor_value_array),
+            }
+            statistics_data[param] = factor_value_list
+        return statistics_result, statistics_data
+
+    def get_factor_value_list(self, param, sub_list, start_date = '', end_date = ''):
+        """
+        计算因子值，为了多进程并行计算
+        """
+        for stock in sub_list:
+            print('Handle stock: ' + stock)
+            data = FileUtils.get_file_by_ts_code(stock)
+            data = self.caculate(data)
+            data = data.dropna()
+            if start_date != '':
+                data = data[data['date'] >= start_date]
+            if end_date != '':
+                data = data[data['date'] <= start_date]
+        return data[self.get_key(param)].tolist()
     
     @classmethod
     def get_factor_code(clz):
@@ -41,9 +119,18 @@ class Factor(metaclass = ABCMeta):
     def get_version(clz):
         return clz.version
     
+    def parse_factor_case(clz, case):
+        """
+        解析factor case，格式：
+        factorcode_version_params_threshold_starttime_endtime
+        例子： MeanInflectionPoint_v1.0_5_0.8_20210101_20210929
+        """
+        return case.split('_')
+    
     @staticmethod
-    def caculate_ret(data, period):
-        data["ret." + str(period)] = (data.shift(-period)["close"] - data["close"]) * 100 / data["close"]
+    def caculate_ret(data, periods):
+        for period in periods:
+            data["ret." + str(period)] = (data.shift(-period)["close"] - data["close"]) * 100 / data["close"]
         return data
     
     @staticmethod
@@ -72,18 +159,22 @@ class Factor(metaclass = ABCMeta):
         return total_data
     
     # 操作默认实现，1-开仓，-1-平仓
-    def get_action_mapping(self, item):
-        if (item[self.get_factor_code()] > 0):
+    def get_action_mapping(self, param, item):
+        if (item[self.get_key(param)] > 0):
             return 1
-        elif (item[self.get_factor_code()] < 0):
+        elif (item[self.get_key(param)] < 0):
             return -1
         else:
             return 0
     
     #全局计算因子值
     @abstractclassmethod
-    def caculate(self, data):
+    def caculate(self, data, create_signal=True):
         pass
+    
+    #获取可视化参数列表
+    def obtain_visual_monitoring_parameters(self):
+        return [self.get_factor_code()]
     
 if __name__ == '__main__':
     print(Factor.get_factor_by_code('factor.momentum_factor','kdj_regression'))

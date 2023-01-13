@@ -19,7 +19,7 @@ class FIPenetration(Factor):
     factor_code = 'fi_penetration'
     version = '1.0'
     
-    _high_limit = 0
+    _high_limit = 20000
     
     def __init__(self, params):
         self._params = params
@@ -34,6 +34,9 @@ class FIPenetration(Factor):
         #向下突破标记线卖出
         data.loc[(data['fi.'+str(self._params[0])].shift(1) > self._high_limit) & (data['fi.'+str(self._params[0])] < self._high_limit), FIPenetration.factor_code] = -100
         return data 
+    
+    def obtain_visual_monitoring_parameters(self):
+        return [factor.get_factor_code(), 'fi.' + str(self._params[0])]
     
 # 资金流量突破
 class MFIPenetration(Factor):
@@ -77,13 +80,13 @@ class OBVTrend(Factor):
 if __name__ == '__main__':
     # #图像分析
     # 股票
-    data = FileUtils.get_file_by_ts_code('600438.SH', is_reversion = True)
+    data = FileUtils.get_file_by_ts_code('601702.SH', is_reversion = True)
     factor = FIPenetration([26])
     data = factor.caculate(data)
     data['index_trade_date'] = pd.to_datetime(data['trade_date'])
     data = data.set_index(['index_trade_date'])
     data['volume'] = data['vol']
-    draw_analysis_curve(data[(data['trade_date'] >= '20220101')], volume = True, show_signal = True, signal_keys = [factor.get_factor_code(),'fi.26'])
+    draw_analysis_curve(data[(data['trade_date'] >= '20220501')], volume = True, show_signal = True, signal_keys = factor.obtain_visual_monitoring_parameters())
     print('aa')
     # 期货
     # data = FileUtils.get_file_by_product_and_instrument('IF', 'IF2204')
@@ -96,10 +99,10 @@ if __name__ == '__main__':
     
     #模拟
     #股票
-    data = FileUtils.get_file_by_ts_code('002415.SZ', is_reversion = True)
-    factor = FIPenetration([26])
-    simulator = StockSimulator()
-    simulator.simulate(factor, data, start_date = '20220101', save = False)
+    # data = FileUtils.get_file_by_ts_code('688169.SH', is_reversion = True)
+    # factor = FIPenetration([26])
+    # simulator = StockSimulator()
+    # simulator.simulate(factor, data, start_date = '20220101', save = False)
     #期货
     # data = FileUtils.get_file_by_product_and_instrument('IF', 'IF2204')
     # data['time'] = data.index

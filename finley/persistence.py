@@ -2,7 +2,9 @@
 # -*- coding:utf8 -*-
 
 from abc import ABCMeta, abstractclassmethod
-
+from sqlalchemy import Column, String, Integer, DateTime, Date, Time, BigInteger, DECIMAL
+from sqlalchemy.ext.declarative import declarative_base
+import datetime
 import pandas as pd
 import connectorx as cx
 import pymysql
@@ -11,6 +13,7 @@ import _pickle as cPickle
 import os
 import shutil
 from glob import glob
+import uuid
 
 import constants
 import json
@@ -222,6 +225,177 @@ class DaoMysqlImpl(Dao):
     def update_close_action(self, id, close_price, close_date):
         sql = "update transaction_record set close_price = '" + str(close_price) + "', close_date = '" + str(close_date) + "', status = '1' where id = '" + id + "'"
         self.update(sql)
+    
+    #获取股票数据    
+    def get_stock_list(self):
+        stock_list = self.select("select ts_code from static_stock_list")
+        return list(map(lambda stock: stock[0], stock_list))
+ 
+def create_session():
+    """创建一个数据库链接会话
+    """
+    pymysql.install_as_MySQLdb()
+    from sqlalchemy import create_engine
+    engine = create_engine(constants.DB_CONNECTION)
+    from sqlalchemy.orm import sessionmaker
+    DbSession = sessionmaker(bind=engine)
+    session = DbSession()
+    return session
+
+Base = declarative_base()
+   
+class Test(Base):
+    """测试表po：
+    """
+    __tablename__ = "test"
+
+    varchar_column = Column(String(10), primary_key=True)
+    int_column = Column(Integer)
+    date_column = Column(Date)
+    datetime_column = Column(DateTime)
+    time_column = Column(Time)
+    created_time = Column(DateTime)
+    modified_time = Column(DateTime)
+
+    def __init__(self, varchar_column, int_column, date_column, datetime_column, time_column):
+        self.varchar_column = varchar_column
+        self.int_column = int_column
+        self.date_column = date_column
+        self.datetime_column = datetime_column
+        self.time_column = time_column
+        self.created_time = datetime.datetime.now()
+        self.modified_time = datetime.datetime.now()
+        
+class FactorCase(Base):
+    """因子场景表po：
+    """
+    __tablename__ = "factor_case"
+
+    id = Column(String(128), primary_key=True)
+    factor = Column(String(64))
+    version = Column(String(10))
+    param = Column(String(50))
+    threshold = Column(String(50))
+    created_time = Column(DateTime)
+    modified_time = Column(DateTime)
+
+    def __init__(self, factor, version, param, threshold):
+        self.id = '_'.join([factor, version, param, threshold])
+        self.factor = factor
+        self.version = version
+        self.param = param
+        self.threshold = threshold
+        self.created_time = datetime.datetime.now()
+        self.modified_time = datetime.datetime.now()
+
+
+class DistributionResult(Base):
+    """分布表po：
+    """
+    __tablename__ = "distribution_result"
+
+    id = Column(String(32), primary_key=True)
+    type = Column(Integer)
+    related_id = Column(String(10))
+    max = Column(DECIMAL(10, 5))
+    min = Column(DECIMAL(10, 5))
+    scope = Column(DECIMAL(10, 5))
+    mean = Column(DECIMAL(10, 5))
+    median = Column(DECIMAL(10, 5))
+    std = Column(DECIMAL(10, 5))
+    var = Column(DECIMAL(10, 5))
+    file_path = Column(DECIMAL(10, 5))
+    created_time = Column(DateTime)
+    modified_time = Column(DateTime)
+
+    def __init__(self, type, related_id, info, file_path):
+        self.id = uuid.uuid4()
+        self.type = type
+        self.related_id = related_id
+        self.max = info['max']
+        self.min = info['min']
+        self.scope = info['scope']
+        self.mean = info['mean']
+        self.median = info['median']
+        self.std = info['std']
+        self.var = info['var']
+        self.file_path = file_path
+        self.created_time = datetime.datetime.now()
+        self.modified_time = datetime.datetime.now()
+
+                
+class FactorAnalysis(Base):
+    """因子分析表po：
+    """
+    __tablename__ = "factor_analysis"
+
+    id = Column(String(128), primary_key=True)
+    factor_case = Column(String(128))
+    filters = Column(String(128))
+    param_value = Column(String(10))
+    created_time = Column(DateTime)
+    modified_time = Column(DateTime)
+
+    def __init__(self, factor_case, filters, param_value):
+        self.id = uuid.uuid4()
+        self.factor_case = factor_case
+        self.filters = filters
+        self.param_value = param_value
+        self.created_time = datetime.datetime.now()
+        self.modified_time = datetime.datetime.now()
+    
+    def get_id(self):
+        return self.id
+
+class FactorRetDistribution(Base):
+    """因子收益分布表po：
+    """
+    __tablename__ = "factor_ret_distribution"
+
+    id = Column(String(32), primary_key=True)
+    factor_case = Column(String(128))
+    filters = Column(String(128))
+    ret1 = Column(String(32))
+    ret2 = Column(String(32))
+    ret3 = Column(String(32))
+    ret4 = Column(String(32))
+    ret5 = Column(String(32))
+    ret6 = Column(String(32))
+    ret7 = Column(String(32))
+    ret8 = Column(String(32))
+    ret9 = Column(String(32))
+    ret10 = Column(String(32))
+    created_time = Column(DateTime)
+    modified_time = Column(DateTime)
+
+    def __init__(self, factor_case, filters, rets):
+        self.id = uuid.uuid4()
+        self.factor_case = factor_case
+        self.filters = filters
+        self.ret1 = rets[0]
+        self.ret2 = rets[1]
+        self.ret3 = rets[2]
+        self.ret4 = rets[3]
+        self.ret5 = rets[4]
+        self.ret6 = rets[5]
+        self.ret7 = rets[6]
+        self.ret8 = rets[7]
+        self.ret9 = rets[8]
+        self.ret10 = rets[9]
+        self.created_time = datetime.datetime.now()
+        self.modified_time = datetime.datetime.now()
+        
+class SectionStockMapping(Base):
+    """板块股票映射表po：
+    """
+    __tablename__ = "section_stock_mapping"
+
+    section_code = Column(String(128), primary_key=True)
+    ts_code = Column(String(10), primary_key=True)
+
+    def __init__(self, section_code, ts_code):
+        self.section_code = section_code
+        self.ts_code = ts_code
         
 if __name__ == '__main__':
     # dao = DaoMysqlImpl()
@@ -249,5 +423,22 @@ if __name__ == '__main__':
     #         if (len(target_files) == 0):
     #             FileUtils.copy_file('/Users/finley/Projects/Stock/origin/' + product + '/' + file.split('/')[7], '/Users/finley/Projects/Stock/data/future/' + product + '/' + file.split('/')[7])
     
-    dao = DaoMysqlImpl()
-    print(dao.get_future_data('rb2210', '2022-04-11 09:00:00', '2022-04-12 09:03:28'))
+    # dao = DaoMysqlImpl()
+    # print(dao.get_future_data('rb2210', '2022-04-11 09:00:00', '2022-04-12 09:03:28'))
+    # print(dao.get_stock_list())
+    
+    # po测试
+    session = create_session()
+
+    # test_po = Test('test1', 40, '2022-12-18', '2022-12-18 02:12:13', '12:12:13')
+    # session.add(test_po)
+    # session.commit()
+     
+    # test_po = session.query(Test).filter(Test.varchar_column == 'test1').one()
+    # test_po.int_column = 30
+    # session.commit()
+
+    result = session.query(SectionStockMapping).filter(SectionStockMapping.section_code.in_(['BK0636','BK0428'])).all()
+    stock_list = list(map(lambda item : item.ts_code, result))
+    print(stock_list)
+    

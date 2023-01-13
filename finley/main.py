@@ -5,13 +5,16 @@ import pandas as pd
 import time
 import ray
 from factor.base_factor import Factor
-ray.init()
+import os
+import uuid
+# ray.init()
 
 from factor.my_factor import LowerHatch
-from factor.trend_factor import MeanInflectionPoint, MeanTrend, MeanPenetration, MeanTrendFirstDiff
+from factor.trend_factor import MeanInflectionPoint, MeanTrend, MeanPenetration, MeanTrendFirstDiff, MultipleMeanPenetration
 from factor.momentum_factor import KDJRegression, RSIPenetration, DRFPenetration, SOPenetration
-from factor.volume_factor import MFIPenetration, OBVTrend
-from persistence import DaoMysqlImpl, FileUtils
+from factor.volume_factor import MFIPenetration, OBVTrend, FIPenetration
+from filter import NewStockFilter, STFilter, create_filter_list, filter_stock
+from persistence import DaoMysqlImpl, FileUtils, create_session, FactorAnalysis, DistributionResult
 from analysis import correlation_analysis, select_stock, retro_select_stock, position_analysis
 from visualization import draw_histogram
 from synchronization import incremental_synchronize_stock_daily_data, synchronize_all_stock, synchronize_stock_daily_data
@@ -20,25 +23,22 @@ from machinelearning import MachineLearn, CompoundFactor, TrainingModel
 from log import log_info
 from tools import run_with_timecost, create_instance, to_params, date_to_time
 from validator import validate_data_integrity
+import constants
 
 
-'''
-1. 更新股票列表
-2. 检查所有股票数据，如果有为空的则自动同步
-3. 检查所有股票数据是否有NA，如果有则增量同步
-4. 检查所有股票数据是否更新到最新的数据
-'''
+
 @run_with_timecost
 def pre_check():
-    persistence = DaoMysqlImpl()
-    stock_list = persistence.select("select ts_code from static_stock_list")
-    
+    '''
+    1. 更新股票列表
+    2. 检查所有股票数据，如果有为空的则自动同步
+    3. 检查所有股票数据是否有NA，如果有则增量同步
+    4. 检查所有股票数据是否更新到最新的数据
+    '''
     #1
-    # log_info('Update stock list')
     synchronize_all_stock()
     
     #2
-    log_info('Validate data')
     validate_data_integrity()
     
 @run_with_timecost   
@@ -48,6 +48,14 @@ def do_correlation_analysis(factor):
     correlation_analysis(factor, data, periods)
     draw_histogram(data[factor.get_factor_code()], 50)
     print("aa")
+    
+@run_with_timecost   
+def return_distribution_statistics(factor):
+    data = FileUtils.get_file_by_ts_code('603882.SH', is_reversion = True)
+    periods = [1,2,3,4,5]
+    for period in periods:
+        Factor.caculate_ret(data, period)
+    data = factor.caculate(data)
 
 @run_with_timecost    
 def run_single_factor_simulation(package, factor_case_code, ts_code = '', is_stock = True):
@@ -110,13 +118,58 @@ def run_select_stock(factor):
 @run_with_timecost      
 def run_retro_select_stock(factor_list, create_date):
     retro_select_stock(factor_list, create_date)
+    
+@run_with_timecost    
+def run_factor_analysis(package, factor_case, filters, ts_code = ''):
+    """
+    分析因子值的分布
+    """
+    persistence = DaoMysqlImpl()
+    session = create_session()
+    factor_case = parse_factor_case(factor_case)
+    factor = create_instance(package, factor_case[0], to_params(factor_case[2]))
+    filter_stock_list = []
+    if ts_code == '':
+        filter_list = create_filter_list(filters)
+        stock_list = persistence.select("select ts_code from static_stock_list")
+        stock_list = list(map(lambda item:item[0], stock_list))
+        for stock in stock_list:
+            data = FileUtils.get_file_by_ts_code(stock, is_reversion = True)
+            if (len(data) > 0 and len(filter_list) > 0 and filter_stock(filter_list, data)):
+                filter_stock_list.append(stock)
+    else:
+        stock_list = persistence.select("select ts_code from static_stock_list where ts_code = '" + ts_code + "'")
+        stock_list = list(map(lambda item:item[0], stock_list))
+    result = factor.analyze(filter_stock_list)
+    for param in factor.get_params():
+        factor_analysis = FactorAnalysis(factor_case, filters, param)
+        session.add(factor_analysis)
+        file_name = uuid.uuid4()
+        path = constants.REPORT_PATH + os.path.sep + 'factor_analysis' + os.path.sep + file_name + '.pkl'
+        FileUtils.save(result[1][param], path)
+        distribution_result = DistributionResult(0, factor_analysis.get_id(), result[0][param], path)
+        session.add(distribution_result)
+    session.commit()
+    
+        
+def parse_factor_case(factor_case):
+    """
+    解析factor case，格式：
+    factorcode_version_params_threshold_starttime_endtime
+    例子： MeanInflectionPoint_v1.0_5_0.8_20210101_20210929
+    """
+    return factor_case.split('_')
         
         
 if __name__ == '__main__':
-    pre_check()
+    # pre_check()
     # 相关性分析
     # factor = OBVTrend([0])
     # do_correlation_analysis(factor)
+    # 因子分析
+    run_factor_analysis('factor.my_factor', 'RisingTrend_v1.0_5|10_0.8|0.7__', 'PriceFilter_50|STFilter')
+    # 概率分布分析
+    # factor = OBVTrend([0])
     # # 参数调优
     # params = [4, 6, 8, 10, 12, 14, 16, 18, 20 ,22, 24, 26, 28 ,30,32,34,36,38,40]
     # ts_code = 'IF2204'
@@ -125,7 +178,7 @@ if __name__ == '__main__':
     #     run_single_factor_simulation('factor.trend_factor', code, ts_code, False)
         # print(code)
     # 单一因子模拟
-    # run_single_factor_simulation('factor.trend_factor', 'MeanTrendFirstDiff_10_20210101_20220614', False)
+    # run_single_factor_simulation('factor.volume_factor', 'FIPenetration_26_20210101_20220812', False)
     # 复合因子模拟
     # factor_list = []
     # factor_list.append(MeanPenetration([20]))
@@ -138,12 +191,14 @@ if __name__ == '__main__':
     # factor = SOPenetration([10])
     # factor = MFIPenetration([14])
     # factor = MeanTrendFirstDiff([10])
+    # factor = FIPenetration([26])
+    # factor = MultipleMeanPenetration([10, 20])
     # data = select_stock([factor])
     # 复盘
     # factor1 = KDJRegression([9])
     # factor2 = RSIPenetration([14])
-    factor = MeanTrendFirstDiff([10])
-    # data = run_retro_select_stock([factor1, factor2], '20220218')
-    data = run_retro_select_stock([factor], '20220614')
+    # factor = MeanTrendFirstDiff([10])
+    # data = run_retro_select_stock([factor1, factor2], '20220726')
+    # data = run_retro_select_stock([factor], '20220720')
     # 持股分析
     # run_position_analysis('factor.momentum_factor')

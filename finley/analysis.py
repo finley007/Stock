@@ -13,7 +13,7 @@ import constants
 from tools import run_with_timecost, get_current_date, open_url
 from persistence import DaoMysqlImpl, FileUtils
 from visualization import draw_histogram
-from filter import PriceFilter, STFilter, PERatioFilter, NewStockFilter
+from filter import PriceFilter, STFilter, PERatioFilter, NewStockFilter, create_filter_list, filter_stock
 from factor.base_factor import Factor
 from factor.trend_factor import MeanTrend, EnvelopePenetration_Keltner, AdvanceEnvelopePenetration_Keltner, MeanPenetration, MeanInflectionPoint
 from factor.momentum_factor import KDJRegression, RSIPenetration, DRFPenetration, WRRegression, UOPenetration
@@ -25,25 +25,6 @@ from datasource import TushareDatasource
 def _ts_code_transform(orignal_str): 
     return orignal_str.split('.')[1].lower() + orignal_str.split('.')[0]
 
-def _create_filter_list(trade_date):
-    filter_list = []
-    # filter_list.append(PriceFilter(80))
-    #不考虑ST股
-    filter_list.append(STFilter())
-    #市盈率在50以下
-    filter_list.append(PERatioFilter(50, trade_date))
-    #去掉次新股
-    filter_list.append(NewStockFilter([60]))
-    return filter_list
-
-# 筛选
-def _filter_stock(filter_list, data):
-    if (len(filter_list) == 0):
-        return True
-    for filter in filter_list:
-        if (not filter.filter(data)):
-            return False
-    return True
 
 # 选股
 @run_with_timecost
@@ -61,11 +42,11 @@ def select_stock(factor_list, stock_list = [], save_result = True, open_link = T
         factor_code_list.append(factor.get_factor_code())
     if (last_business_date == ''):
         last_business_date = persistence.get_last_business_date()
-    filter_list = _create_filter_list(last_business_date)
+    filter_list = create_filter_list(last_business_date)
     for stock in stock_list:
         print("Handle stock: " + stock[0])
         data = FileUtils.get_file_by_ts_code(stock[0], True)
-        if (len(data) > 0 and _filter_stock(filter_list, data)):
+        if (len(data) > 0 and filter_stock(filter_list, data)):
             data = data[data['trade_date'] <= last_business_date]
             temp = []
             for factor in factor_list:
@@ -341,7 +322,7 @@ if __name__ == '__main__':
     # 因子相关性分析
     # factor_correlation_analysis(factor1, factor2)
     # 打开选股结果
-    open_selected_stocks_link('6a2575a6-ebfc-11ec-92b0-acde4800')
+    open_selected_stocks_link('4e47cdd6-2304-11ed-8de4-acde4800')
     # 声称股票统计信息
     # create_stock_statistics('20220321')
     

@@ -32,7 +32,7 @@ class Indicator(metaclass = ABCMeta):
 class Envelope(Indicator):
     
     _percetage = 0.05
-    _channel_width = 1
+    _channel_width = 3
     
     @abstractclassmethod
     def get_high_value_key(self, param):
@@ -86,8 +86,9 @@ class FirstDiff(Indicator):
         
     def enrich(self, data):
         data = self._indicator.enrich(data)
-        data[FirstDiff.key + '.' + self._indicator.get_key()] = data[self._indicator.get_key() + '.' + str(self._indicator.get_params()[0])] - data[self._indicator.get_key() + '.' + str(self._indicator.get_params()[0])].shift(1)
-        data[FirstDiff.key + '.' + self._indicator.get_key() + '.' + str(self.get_params()[0])] = data[FirstDiff.key + '.' + self._indicator.get_key()].ewm(alpha=2 / (self.get_params()[0] + 1), adjust=False).mean()
+        data['normalized'] = data['close'].shift(self.get_params()[0]+1)*(1.1**(self.get_params()[0])-0.9**(self.get_params()[0]))/self.get_params()[0]
+        data[self.get_key()] = (data[self._indicator.get_key() + '.' + str(self._indicator.get_params()[0])] - data[self._indicator.get_key() + '.' + str(self._indicator.get_params()[0])].shift(1))/data['normalized']
+        data[self.get_key() + '.' + str(self.get_params()[0])] = data[FirstDiff.key + '.' + self._indicator.get_key()].ewm(alpha=2 / (self.get_params()[0] + 1), adjust=False).mean()
         return data.copy()
     
     def get_key(self):
@@ -257,7 +258,7 @@ class PricePercentageEnvelope(Envelope):
 # ATR均值包络
 class ATREnvelope(Envelope):
     
-    _percetage = 1
+    _percetage = 2
       
     def __init__(self, params):
         self._params = params

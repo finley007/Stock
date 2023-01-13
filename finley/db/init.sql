@@ -66,7 +66,9 @@ CREATE TABLE IF NOT EXISTS factor_case
 (
 id VARCHAR(128),
 factor VARCHAR(64),
-param  VARCHAR(10),
+version  VARCHAR(10),
+param  VARCHAR(50),
+threshold VARCHAR(50),
 start_date  VARCHAR(8),
 end_date  VARCHAR(8),
 PRIMARY KEY(id)
@@ -231,36 +233,124 @@ instrument        VARCHAR(20),
 PRIMARY KEY (time, instrument)
 );
 
+-- stock_section
+-- 股票板块表
+CREATE TABLE IF NOT EXISTS stock_section
+(
+enterprise VARCHAR(4),  
+section_code VARCHAR(10),
+section_name VARCHAR(20),
+remark  VARCHAR(512),
+PRIMARY KEY(enterprise, section_code)
+);
 
-insert into factor_case values ('MeanInflectionPoint_5_20210101_20210929','MeanInflectionPoint','5','20210101','20210929');
-insert into factor_case values ('MeanInflectionPoint_20_20210101_20211111','MeanInflectionPoint','20','20210101','20211111');
-insert into factor_case values ('MeanPenetration_20_20210101_20210929','MeanPenetration','20','20210101','20210929');
-insert into factor_case values ('MeanPenetration_20_20210101_20211126','MeanPenetration','20','20210101','20211126');
-insert into factor_case values ('EnvelopePenetration_MeanPercentage_20_20210101_20211016','EnvelopePenetration_MeanPercentage','20','20210101','20211016');
-insert into factor_case values ('MACDPenetration_0_20210101_20211023','MACDPenetration','0','20210101','20211023');
-insert into factor_case values ('LowerHatch_5_20210101_20211102','LowerHatch','5','20210101','20211102');
-insert into factor_case values ('MeanTrend_20_20210101_20211113','MeanTrend','20','20210101','20211113');
-insert into factor_case values ('EnvelopePenetration_Keltner_20_20210101_20211115','EnvelopePenetration_Keltner','20','20210101','20211115');
-insert into factor_case values ('AdvanceEnvelopePenetration_Keltner_20_20210101_20211120','AdvanceEnvelopePenetration_Keltner','20','20210101','20211120');
-insert into factor_case values ('MeanInflectionPoint_10_20210101_20211214','MeanInflectionPoint','10','20210101','20211214');
-insert into factor_case values ('KDJRegression_9_20210101_20211226','KDJRegression','9','20210101','20211226');
-insert into factor_case values ('RSIPenetration_14_20210101_20211226','RSIPenetration','14','20210101','20211226');
-insert into factor_case values ('DRFPenetration_0.3_20210101_20211231','DRFPenetration','0.3','20210101','20211231');
-insert into factor_case values ('WRRegression_30_20210101_20220113','WRRegression','30','20210101','20220114');
-insert into factor_case values ('UOPenetration_7|14|28_20210101_20220114','UOPenetration','7|14|28','20210101','20220114');
-insert into factor_case values ('RVIPenetration_10_20210101_20220117','RVIPenetration','10','20210101','20220117');
-insert into factor_case values ('FIPenetration_13_20210101_2022217','FIPenetration','13','20210101','20220217');
-insert into factor_case values ('MFIPenetration_14_20210101_20220222','MFIPenetration','14','20210101','20220222');
-insert into factor_case values ('MeanTrendFirstDiff_10_20210101_20220614','MeanTrendFirstDiff','10','20210101','20220614');
+-- stock_section_statistics
+-- 股票板块信息表
+CREATE TABLE IF NOT EXISTS stock_section_statistics
+(
+id VARCHAR(32),
+section_code VARCHAR(10),
+section_name VARCHAR(20),
+ranking INT,
+main_inflow DECIMAL(10,2), 
+main_inflow_rate DECIMAL(10,2), 
+super_large_inflow DECIMAL(10,2),
+super_large_inflow_rate DECIMAL(10,2),
+large_inflow DECIMAL(10,2),
+large_inflow_rate DECIMAL(10,2),
+middle_inflow DECIMAL(10,2),
+middle_inflow_rate DECIMAL(10,2),
+small_inflow DECIMAL(10,2),
+small_inflow_rate DECIMAL(10,2),
+trade_date VARCHAR(10),
+PRIMARY KEY(id)
+);
+
+-- section_stock_mapping
+-- 股票板块股票映射表
+CREATE TABLE IF NOT EXISTS section_stock_mapping
+(
+section_code VARCHAR(10),
+ts_code       VARCHAR(10),
+PRIMARY KEY(ts_code, section_code)
+);
+
+-- test 测试表
+CREATE TABLE IF NOT EXISTS test
+(
+varchar_column VARCHAR(10),
+int_column  int(10),
+date_column  date,
+datetime_column  datetime,
+time_column  time,
+created_time datetime,
+modified_time datetime,
+PRIMARY KEY(varchar_column)
+);
+
+-- 分布结果表
+CREATE TABLE IF NOT EXISTS distribution_result
+(
+id VARCHAR(32),
+type int comment '0-因子分布，1-因子收益分布',
+related_id  VARCHAR(32),
+max  DECIMAL(10,5),
+min  DECIMAL(10,5),
+scope DECIMAL(10,5),
+mean DECIMAL(10,5),
+median DECIMAL(10,5),
+std DECIMAL(10,5),
+var DECIMAL(10,5),
+file_path VARCHAR(128),
+created_time datetime,
+modified_time datetime,
+PRIMARY KEY(id)
+);
+
+-- 因子分析表
+CREATE TABLE IF NOT EXISTS factor_analysis
+(
+id VARCHAR(32),
+factor_case VARCHAR(128),
+filters  VARCHAR(128),
+param_value VARCHAR(10),
+created_time datetime,
+modified_time datetime,
+PRIMARY KEY(id)
+);
+
+-- 因子收益分布表
+CREATE TABLE IF NOT EXISTS factor_ret_distribution
+(
+id VARCHAR(32),
+factor_case VARCHAR(128),
+filters  VARCHAR(128),
+ret1  VARCHAR(32),
+ret2  VARCHAR(32),
+ret3  VARCHAR(32),
+ret4  VARCHAR(32),
+ret5  VARCHAR(32),
+ret6  VARCHAR(32),
+ret7  VARCHAR(32),
+ret8  VARCHAR(32),
+ret9  VARCHAR(32),
+ret10  VARCHAR(32),
+created_time datetime,
+modified_time datetime,
+PRIMARY KEY(id)
+);
+
+insert into factor_case values ('MeanInflectionPoint_5__v1.0_20210101_20210929','MeanInflectionPoint','v1.0','5','','20210101','20210929');
+insert into factor_case values ('RisingTrend_v1.0_5|10_0.8|0.7__','RisingTrend','v1.0','5|10','0.8|0.7','','');
 
 insert into learning_model values ('1', '{"training_set":[{"ts_code":"000858.SZ","start_date":"20190701","end_date":"20200310"}],"profit_period":"5","pre_process":[],"algorithm":"LinearRegression"}', '震荡行情');
 insert into learning_model values ('2', '{"training_set":[{"ts_code":"000858.SZ","start_date":"20200325","end_date":"20210105"}],"profit_period":"5","pre_process":[],"algorithm":"LinearRegression"}', '攀升行情');
 insert into learning_model values ('3', '{"training_set":[{"ts_code":"000858.SZ","start_date":"20200525","end_date":"20210901"}],"profit_period":"5","pre_process":[],"algorithm":"LinearRegression"}', '下降行情');
 
 select distinct factor_case from simulation_result;
-select count(*) from simulation_result where factor_case = 'mean_trend_first_diff_10_20210101_20220614' and profit_rate > 0 and version = '1.0';
-select count(*) from simulation_result where factor_case = 'mean_trend_first_diff_10_20210101_20220614' and profit_rate < 0 and version = '1.0';
-select ts_code, profit_rate from simulation_result where factor_case = 'mean_trend_first_diff_10_20210101_20220614' and profit_rate > 0 and version = '1.0' order by profit_rate desc;
-select ts_code, profit_rate from simulation_result where factor_case = 'mean_trend_first_diff_10_20210101_20220614' and profit_rate < 0 and version = '1.0' order by profit_rate desc;
-select avg(profit_rate) from simulation_result where factor_case = 'mean_trend_first_diff_10_20210101_20220614' and version = '1.0';
-delete from simulation_result where factor_case = 'mean_trend_first_diff_10_20210101_20220614';
+select count(*) from simulation_result where factor_case = 'fi_penetration_26_20210101_20220810' and profit_rate > 0 and version = '1.0';
+select count(*) from simulation_result where factor_case = 'fi_penetration_26_20210101_20220810' and profit_rate < 0 and version = '1.0';
+select ts_code, profit_rate from simulation_result where factor_case = 'fi_penetration_26_20210101_20220810' and profit_rate > 0 and version = '1.0' order by profit_rate desc;
+select ts_code, profit_rate from simulation_result where factor_case = 'fi_penetration_26_20210101_20220810' and profit_rate < 0 and version = '1.0' order by profit_rate desc;
+select avg(profit_rate) from simulation_result where factor_case = 'fi_penetration_26_20210101_20220811' and version = '1.0';
+delete from simulation_result where factor_case = 'fi_penetration_26_20210101_20220810';
