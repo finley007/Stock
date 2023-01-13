@@ -14,3 +14,4 @@ pip3 install webdriver-manager -i http://mirrors.aliyun.com/pypi/simple/ --trust
 pip3 install ipywidgets -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com
 pip3 install dask -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com
 pip3 install SQLalchemy -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com
+pip3 install ray -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com
