@@ -3,7 +3,7 @@
 
 from abc import ABCMeta, abstractclassmethod
 import pandas as pd
-import ray
+# import ray
 import time
 
 from persistence import DaoMysqlImpl, FileUtils
@@ -48,6 +48,7 @@ def validate_data_integrity():
     persistence = DaoMysqlImpl()
     stock_list = persistence.select("select ts_code from static_stock_list")
     for stock in stock_list:
+        # if stock[0] == '':
         validate_stock(stock[0], persistence)
     # time.sleep(300)
 
@@ -62,7 +63,7 @@ def validate_stock(ts_code, persistence):
         last_business_date = persistence.get_last_business_date()
         if (data['trade_date'].max() != last_business_date):
             raise DataException("%s data not update"%(ts_code))
-    except (FileNotFoundError, DataException):
+    except (FileNotFoundError, DataException) as e:
         print('Incremetal sync stock: ' + ts_code)
         data = incremental_synchronize_stock_daily_data(ts_code, is_reversion = False)
         FileUtils.save_file_by_ts_code(data, ts_code, is_reversion = False)

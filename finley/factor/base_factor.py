@@ -71,7 +71,7 @@ class Factor(metaclass = ABCMeta):
             if len(stock_list) == 0:
                 persistence = DaoMysqlImpl()
                 stock_list = persistence.get_stock_list()
-            pagination = Pagination(stock_list, page_size=20)
+            pagination = Pagination(stock_list, page_size=50)
             runner = ProcessRunner(10)
             while pagination.has_next():
                 sub_list = pagination.next()
@@ -83,7 +83,7 @@ class Factor(metaclass = ABCMeta):
             statistics_result[param] = {
             'max' : np.amax(factor_value_array),
             'min' : np.amin(factor_value_array),
-            'range' : np.ptp(factor_value_array),
+            'scope' : np.ptp(factor_value_array),
             'mean' : np.mean(factor_value_array),
             'median' : np.median(factor_value_array),
             'std' : np.std(factor_value_array),

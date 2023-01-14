@@ -3,11 +3,9 @@
 
 import pandas as pd
 import time
-import ray
 from factor.base_factor import Factor
 import os
 import uuid
-# ray.init()
 
 from factor.my_factor import LowerHatch
 from factor.trend_factor import MeanInflectionPoint, MeanTrend, MeanPenetration, MeanTrendFirstDiff, MultipleMeanPenetration
@@ -145,7 +143,7 @@ def run_factor_analysis(package, factor_case, filters, ts_code = ''):
         factor_analysis = FactorAnalysis(factor_case, filters, param)
         session.add(factor_analysis)
         file_name = uuid.uuid4()
-        path = constants.REPORT_PATH + os.path.sep + 'factor_analysis' + os.path.sep + file_name + '.pkl'
+        path = constants.REPORT_PATH + os.path.sep + 'factor_analysis' + os.path.sep + str(file_name) + '.pkl'
         FileUtils.save(result[1][param], path)
         distribution_result = DistributionResult(0, factor_analysis.get_id(), result[0][param], path)
         session.add(distribution_result)
@@ -162,7 +160,7 @@ def parse_factor_case(factor_case):
         
         
 if __name__ == '__main__':
-    # pre_check()
+    pre_check()
     # 相关性分析
     # factor = OBVTrend([0])
     # do_correlation_analysis(factor)

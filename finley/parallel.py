@@ -2,16 +2,16 @@
 # -*- coding:utf8 -*-
 
 import time
-import ray
+# import ray
 import tools
 from multiprocessing import Pool
 
-ray.init()
+# ray.init()
 
 def f1():
     time.sleep(1)
     
-@ray.remote    
+# @ray.remote    
 def f2():
     time.sleep(1)
 

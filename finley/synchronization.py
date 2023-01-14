@@ -3,7 +3,7 @@
 
 import time
 import datetime
-import ray
+# import ray
 
 import pandas as pd
 
@@ -29,11 +29,11 @@ def synchronize_all_stock():
         persistence = DaoMysqlImpl()
         result = persistence.delete('delete from static_stock_list')
         for index, row in stock_list.iterrows():
-            # item = (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11], row[12], row[13], row[14])
-            # persistence.insert('insert into static_stock_list_test values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)', [item])
-            update_stock_info.remote(row, persistence)
+            item = (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11], row[12], row[13], row[14])
+            persistence.insert('insert into static_stock_list values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)', [item])
+            # update_stock_info.remote(row, persistence)
 
-@ray.remote  
+# @ray.remote  
 def update_stock_info(row, persistence):
     item = (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11], row[12], row[13], row[14])
     persistence.insert('insert into static_stock_list values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)', [item])
