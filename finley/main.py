@@ -6,13 +6,14 @@ import time
 from factor.base_factor import Factor
 import os
 import uuid
+import numpy as np
 
 from factor.my_factor import LowerHatch
 from factor.trend_factor import MeanInflectionPoint, MeanTrend, MeanPenetration, MeanTrendFirstDiff, MultipleMeanPenetration
 from factor.momentum_factor import KDJRegression, RSIPenetration, DRFPenetration, SOPenetration
 from factor.volume_factor import MFIPenetration, OBVTrend, FIPenetration
 from filter import NewStockFilter, STFilter, create_filter_list, filter_stock
-from persistence import DaoMysqlImpl, FileUtils, create_session, FactorAnalysis, DistributionResult
+from persistence import DaoMysqlImpl, FileUtils, create_session, FactorAnalysis, DistributionResult, FactorRetDistribution
 from analysis import correlation_analysis, select_stock, retro_select_stock, position_analysis
 from visualization import draw_histogram
 from synchronization import incremental_synchronize_stock_daily_data, synchronize_all_stock, synchronize_stock_daily_data
@@ -137,18 +138,71 @@ def run_factor_analysis(package, factor_case, filters, ts_code = ''):
                 filter_stock_list.append(stock)
     else:
         stock_list = persistence.select("select ts_code from static_stock_list where ts_code = '" + ts_code + "'")
-        stock_list = list(map(lambda item:item[0], stock_list))
+        filter_stock_list = list(map(lambda item:item[0], stock_list))
     result = factor.analyze(filter_stock_list)
     for param in factor.get_params():
         factor_analysis = FactorAnalysis(factor_case, filters, param)
         session.add(factor_analysis)
-        file_name = uuid.uuid4()
+        file_name = str(uuid.uuid4()).replace('-','')
         path = constants.REPORT_PATH + os.path.sep + 'factor_analysis' + os.path.sep + str(file_name) + '.pkl'
         FileUtils.save(result[1][param], path)
         distribution_result = DistributionResult(0, factor_analysis.get_id(), result[0][param], path)
         session.add(distribution_result)
-    session.commit()
+        session.commit()
     
+@run_with_timecost    
+def run_factor_ret_distribution_analysis(package, factor_case, filters, ts_code = ''):
+    """
+    分析因子值收益率的分布
+    """
+    ret_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    persistence = DaoMysqlImpl()
+    session = create_session()
+    factor_case = parse_factor_case(factor_case)
+    factor = create_instance(package, factor_case[0], to_params(factor_case[2]))
+    filter_stock_list = []
+    if ts_code == '':
+        filter_list = create_filter_list(filters)
+        stock_list = persistence.select("select ts_code from static_stock_list")
+        stock_list = list(map(lambda item:item[0], stock_list))
+        for stock in stock_list:
+            data = FileUtils.get_file_by_ts_code(stock, is_reversion = True)
+            if (len(data) > 0 and len(filter_list) > 0 and filter_stock(filter_list, data)):
+                filter_stock_list.append(stock)
+    else:
+        stock_list = persistence.select("select ts_code from static_stock_list where ts_code = '" + ts_code + "'")
+        filter_stock_list = list(map(lambda item:item[0], stock_list))
+    data = pd.DataFrame()
+    for stock in filter_stock_list:
+        temp_data = FileUtils.get_file_by_ts_code(stock, is_reversion = True)
+        temp_data = factor.caculate(temp_data)
+        temp_data = Factor.caculate_ret(temp_data, ret_list)
+        temp_data = temp_data.dropna()
+        data = pd.concat(data, temp_data)
+    for param in factor.get_params():
+        ret_id = []
+        for ret in ret_list:
+            ret_list = data[data[factor.get_signal(param)] == 1]['ret.' + str(ret)].tolist()
+            ret = np.array(ret_list)
+            result = {
+                    'max' : np.amax(ret),
+                    'min' : np.amin(ret),
+                    'range' : np.ptp(ret),
+                    'mean' : np.mean(ret),
+                    'median' : np.median(ret),
+                    'std' : np.std(ret),
+                    'var' : np.var(ret)
+            }
+            related_id = str(uuid.uuid4()).replace('-','')
+            ret_id = ret_id.append(related_id)
+            file_name = str(uuid.uuid4()).replace('-','')
+            path = constants.REPORT_PATH + os.path.sep + 'factor_ret_distribution' + os.path.sep + str(file_name) + '.pkl'
+            FileUtils.save(ret_list, path)
+            distribution_result = DistributionResult(1, related_id, result, path)
+            session.add(distribution_result)
+        factor_ret_distribution = FactorRetDistribution(factor_case, filters, ret_id)
+        session.add(factor_ret_distribution)
+        session.commit()
         
 def parse_factor_case(factor_case):
     """
@@ -166,6 +220,8 @@ if __name__ == '__main__':
     # do_correlation_analysis(factor)
     # 因子分析
     run_factor_analysis('factor.my_factor', 'RisingTrend_v1.0_5|10_0.8|0.7__', 'PriceFilter_50|STFilter')
+    # 因子收益率分布分析
+    run_factor_ret_distribution_analysis('factor.my_factor', 'RisingTrend_v1.0_5|10_0.8|0.7__', 'PriceFilter_50|STFilter')
     # 概率分布分析
     # factor = OBVTrend([0])
     # # 参数调优
