@@ -183,6 +183,7 @@ def run_factor_ret_distribution_analysis(package, factor_case_exp, filters, ts_c
         ret_id = []
         for ret in ret_schema_list:
             ret_list = data[data[factor.get_signal(param)] == 1]['ret.' + str(ret)].tolist()
+            ret_ptile_array = np.percentile(ret_list, [10, 20, 30, 40, 50, 60, 70, 80, 90])
             ret = np.array(ret_list)
             result = {
                     'max' : np.amax(ret),
@@ -191,7 +192,16 @@ def run_factor_ret_distribution_analysis(package, factor_case_exp, filters, ts_c
                     'mean' : np.mean(ret),
                     'median' : np.median(ret),
                     'std' : np.std(ret),
-                    'var' : np.var(ret)
+                    'var' : np.var(ret),
+                    'ptile10' : ret_ptile_array[0],
+                    'ptile20' : ret_ptile_array[1],
+                    'ptile30' : ret_ptile_array[2],
+                    'ptile40' : ret_ptile_array[3],
+                    'ptile50' : ret_ptile_array[4],
+                    'ptile60' : ret_ptile_array[5],
+                    'ptile70' : ret_ptile_array[6],
+                    'ptile80' : ret_ptile_array[7],
+                    'ptile90' : ret_ptile_array[8]
             }
             related_id = str(uuid.uuid4()).replace('-','')
             ret_id.append(related_id)
@@ -200,7 +210,7 @@ def run_factor_ret_distribution_analysis(package, factor_case_exp, filters, ts_c
             FileUtils.save(ret_list, path)
             distribution_result = DistributionResult(1, related_id, result, path)
             session.add(distribution_result)
-        factor_ret_distribution = FactorRetDistribution(factor_case_exp, filters, ret_id)
+        factor_ret_distribution = FactorRetDistribution(factor_case, filters, ret_id, param)
         session.add(factor_ret_distribution)
         session.commit()
         
@@ -219,13 +229,13 @@ if __name__ == '__main__':
     # factor = OBVTrend([0])
     # do_correlation_analysis(factor)
     # 因子分析
-    # run_factor_analysis('factor.my_factor', 'RisingTrend_v1.0_5|10_0.8|0.7__', 'PriceFilter_50|STFilter')
+    run_factor_analysis('factor.my_factor', 'RisingTrend_v1.0_5|10_0.8|0.7__', 'PriceFilter_50|STFilter')
     # run_factor_analysis('factor.my_factor', 'FallingTrend_v1.0_10|15|20_0.9|0.8|0.7__', 'PriceFilter_50|STFilter')
-    run_factor_analysis('factor.my_factor', 'LowerHatch_v1.0_10_0.7__', 'PriceFilter_50|STFilter')
+    # run_factor_analysis('factor.my_factor', 'LowerHatch_v1.0_10_0.7__', 'PriceFilter_50|STFilter')
     # 因子收益率分布分析
     # run_factor_ret_distribution_analysis('factor.my_factor', 'RisingTrend_v1.0_5|10_0.8|0.7__', 'PriceFilter_50|STFilter')
-    run_factor_ret_distribution_analysis('factor.my_factor', 'FallingTrend_v1.0_10|15|20_0.9|0.8|0.7__', 'PriceFilter_50|STFilter')
-    run_factor_ret_distribution_analysis('factor.my_factor', 'LowerHatch_v1.0_10_0.7__', 'PriceFilter_50|STFilter')
+    # run_factor_ret_distribution_analysis('factor.my_factor', 'FallingTrend_v1.0_10|15|20_0.9|0.8|0.7__', 'PriceFilter_50|STFilter')
+    # run_factor_ret_distribution_analysis('factor.my_factor', 'LowerHatch_v1.0_10_0.7__', 'PriceFilter_50|STFilter')
     # 概率分布分析
     # factor = OBVTrend([0])
     # # 参数调优

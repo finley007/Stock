@@ -80,6 +80,7 @@ class Factor(metaclass = ABCMeta):
                 for result in results:
                     factor_value_list = factor_value_list + result.get()
             factor_value_array = np.array(factor_value_list)
+            ptile_array = np.percentile(factor_value_list, [10, 20, 30, 40, 50, 60, 70, 80, 90])
             statistics_result[param] = {
             'max' : np.amax(factor_value_array),
             'min' : np.amin(factor_value_array),
@@ -88,6 +89,15 @@ class Factor(metaclass = ABCMeta):
             'median' : np.median(factor_value_array),
             'std' : np.std(factor_value_array),
             'var' : np.var(factor_value_array),
+            'ptile10' : ptile_array[0],
+            'ptile20' : ptile_array[1],
+            'ptile30' : ptile_array[2],
+            'ptile40' : ptile_array[3],
+            'ptile50' : ptile_array[4],
+            'ptile60' : ptile_array[5],
+            'ptile70' : ptile_array[6],
+            'ptile80' : ptile_array[7],
+            'ptile90' : ptile_array[8]
             }
             statistics_data[param] = factor_value_list
         return statistics_result, statistics_data

@@ -319,6 +319,15 @@ class DistributionResult(Base):
         self.median = info['median']
         self.std = info['std']
         self.var = info['var']
+        self.ptile10 = info['ptile10']
+        self.ptile20 = info['ptile20']
+        self.ptile30 = info['ptile30']
+        self.ptile40 = info['ptile40']
+        self.ptile50 = info['ptile50']
+        self.ptile60 = info['ptile60']
+        self.ptile70 = info['ptile70']
+        self.ptile80 = info['ptile80']
+        self.ptile90 = info['ptile90']
         self.file_path = file_path
         self.created_time = datetime.datetime.now()
         self.modified_time = datetime.datetime.now()
@@ -355,6 +364,7 @@ class FactorRetDistribution(Base):
     id = Column(String(32), primary_key=True)
     factor_case = Column(String(128))
     filters = Column(String(128))
+    param_value = Column(String(10))
     ret1 = Column(String(32))
     ret2 = Column(String(32))
     ret3 = Column(String(32))
@@ -368,10 +378,11 @@ class FactorRetDistribution(Base):
     created_time = Column(DateTime)
     modified_time = Column(DateTime)
 
-    def __init__(self, factor_case, filters, rets):
+    def __init__(self, factor_case, filters, rets, param_value):
         self.id = str(uuid.uuid4()).replace('-', '')
         self.factor_case = factor_case
         self.filters = filters
+        self.param_value = param_value
         self.ret1 = rets[0]
         self.ret2 = rets[1]
         self.ret3 = rets[2]
