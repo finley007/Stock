@@ -309,7 +309,7 @@ class DistributionResult(Base):
     modified_time = Column(DateTime)
 
     def __init__(self, type, related_id, info, file_path):
-        self.id = uuid.uuid4()
+        self.id = str(uuid.uuid4()).replace('-', '')
         self.type = type
         self.related_id = related_id
         self.max = info['max']
@@ -329,7 +329,7 @@ class FactorAnalysis(Base):
     """
     __tablename__ = "factor_analysis"
 
-    id = Column(String(128), primary_key=True)
+    id = Column(String(32), primary_key=True)
     factor_case = Column(String(128))
     filters = Column(String(128))
     param_value = Column(String(10))
@@ -337,7 +337,7 @@ class FactorAnalysis(Base):
     modified_time = Column(DateTime)
 
     def __init__(self, factor_case, filters, param_value):
-        self.id = uuid.uuid4()
+        self.id = str(uuid.uuid4()).replace('-', '')
         self.factor_case = factor_case
         self.filters = filters
         self.param_value = param_value
@@ -369,7 +369,7 @@ class FactorRetDistribution(Base):
     modified_time = Column(DateTime)
 
     def __init__(self, factor_case, filters, rets):
-        self.id = uuid.uuid4()
+        self.id = str(uuid.uuid4()).replace('-', '')
         self.factor_case = factor_case
         self.filters = filters
         self.ret1 = rets[0]

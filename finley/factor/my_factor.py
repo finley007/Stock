@@ -120,7 +120,7 @@ class LowerHatch(Factor):
     
     def get_action_mapping(self, param, item):
         threshold = {
-            10 : 0.5
+            10 : 0.7
         }
         if (item[self.get_key(param)] >= threshold[param]):
             return 1
@@ -132,7 +132,7 @@ class LowerHatch(Factor):
 if __name__ == '__main__':
     # 因子分析
     # factor = RisingTrend([5, 10])
-    # factor = FallingTrend([10, 15, 20])
+    factor = FallingTrend([10, 15, 20])
     factor = LowerHatch([10])
     print(factor.analyze(stock_list=['601318.SH']))
     
