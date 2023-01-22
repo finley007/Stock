@@ -108,6 +108,8 @@ def filter_stock(filter_list, data):
     
 def create_filter_list(filters):
     filter_list = []
+    if filters == '':
+        return filter_list
     filter_exp_list = filters.split('|')
     if len(filter_exp_list) > 0:
         for filter in filter_exp_list:
