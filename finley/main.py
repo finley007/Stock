@@ -229,7 +229,7 @@ if __name__ == '__main__':
     # factor = OBVTrend([0])
     # do_correlation_analysis(factor)
     # 因子分析
-    run_factor_analysis('factor.my_factor', 'RisingTrend_v1.0_5|10_0.8|0.7__', 'PriceFilter_50|STFilter')
+    # run_factor_analysis('factor.my_factor', 'RisingTrend_v1.0_5|10_0.8|0.7__', 'PriceFilter_50|STFilter')
     # run_factor_analysis('factor.my_factor', 'FallingTrend_v1.0_10|15|20_0.9|0.8|0.7__', 'PriceFilter_50|STFilter')
     # run_factor_analysis('factor.my_factor', 'LowerHatch_v1.0_10_0.7__', 'PriceFilter_50|STFilter')
     # 因子收益率分布分析
