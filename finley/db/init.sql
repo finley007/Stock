@@ -356,3 +356,24 @@ insert into factor_case values ('RisingTrend_v1.0_5|10_0.8|0.7__','RisingTrend',
 insert into learning_model values ('1', '{"training_set":[{"ts_code":"000858.SZ","start_date":"20190701","end_date":"20200310"}],"profit_period":"5","pre_process":[],"algorithm":"LinearRegression"}', '震荡行情');
 insert into learning_model values ('2', '{"training_set":[{"ts_code":"000858.SZ","start_date":"20200325","end_date":"20210105"}],"profit_period":"5","pre_process":[],"algorithm":"LinearRegression"}', '攀升行情');
 insert into learning_model values ('3', '{"training_set":[{"ts_code":"000858.SZ","start_date":"20200525","end_date":"20210901"}],"profit_period":"5","pre_process":[],"algorithm":"LinearRegression"}', '下降行情');
+
+create view factor_ret_distribution_view as 
+select 'ret1', t1.factor_case, t1.param_value, t2.max, t2.min, t2.scope, t2.mean, t2.median, t2.std, t2.var, t2.ptile10, t2.ptile20, t2.ptile30, t2.ptile40, t2.ptile50, t2.ptile60, t2.ptile70, t2.ptile80, t2.ptile90 from factor_ret_distribution t1, distribution_result t2 where t1.ret1 = t2.related_id
+union all
+select 'ret2', t1.factor_case, t1.param_value, t2.max, t2.min, t2.scope, t2.mean, t2.median, t2.std, t2.var, t2.ptile10, t2.ptile20, t2.ptile30, t2.ptile40, t2.ptile50, t2.ptile60, t2.ptile70, t2.ptile80, t2.ptile90 from factor_ret_distribution t1, distribution_result t2 where t1.ret2 = t2.related_id
+union all
+select 'ret3', t1.factor_case, t1.param_value, t2.max, t2.min, t2.scope, t2.mean, t2.median, t2.std, t2.var, t2.ptile10, t2.ptile20, t2.ptile30, t2.ptile40, t2.ptile50, t2.ptile60, t2.ptile70, t2.ptile80, t2.ptile90 from factor_ret_distribution t1, distribution_result t2 where t1.ret3 = t2.related_id
+union all
+select 'ret4', t1.factor_case, t1.param_value, t2.max, t2.min, t2.scope, t2.mean, t2.median, t2.std, t2.var, t2.ptile10, t2.ptile20, t2.ptile30, t2.ptile40, t2.ptile50, t2.ptile60, t2.ptile70, t2.ptile80, t2.ptile90 from factor_ret_distribution t1, distribution_result t2 where t1.ret4 = t2.related_id
+union all
+select 'ret5', t1.factor_case, t1.param_value, t2.max, t2.min, t2.scope, t2.mean, t2.median, t2.std, t2.var, t2.ptile10, t2.ptile20, t2.ptile30, t2.ptile40, t2.ptile50, t2.ptile60, t2.ptile70, t2.ptile80, t2.ptile90 from factor_ret_distribution t1, distribution_result t2 where t1.ret5 = t2.related_id
+union all
+select 'ret6', t1.factor_case, t1.param_value, t2.max, t2.min, t2.scope, t2.mean, t2.median, t2.std, t2.var, t2.ptile10, t2.ptile20, t2.ptile30, t2.ptile40, t2.ptile50, t2.ptile60, t2.ptile70, t2.ptile80, t2.ptile90 from factor_ret_distribution t1, distribution_result t2 where t1.ret6 = t2.related_id
+union all
+select 'ret7', t1.factor_case, t1.param_value, t2.max, t2.min, t2.scope, t2.mean, t2.median, t2.std, t2.var, t2.ptile10, t2.ptile20, t2.ptile30, t2.ptile40, t2.ptile50, t2.ptile60, t2.ptile70, t2.ptile80, t2.ptile90 from factor_ret_distribution t1, distribution_result t2 where t1.ret7 = t2.related_id
+union all
+select 'ret8', t1.factor_case, t1.param_value, t2.max, t2.min, t2.scope, t2.mean, t2.median, t2.std, t2.var, t2.ptile10, t2.ptile20, t2.ptile30, t2.ptile40, t2.ptile50, t2.ptile60, t2.ptile70, t2.ptile80, t2.ptile90 from factor_ret_distribution t1, distribution_result t2 where t1.ret8 = t2.related_id
+union all
+select 'ret9', t1.factor_case, t1.param_value, t2.max, t2.min, t2.scope, t2.mean, t2.median, t2.std, t2.var, t2.ptile10, t2.ptile20, t2.ptile30, t2.ptile40, t2.ptile50, t2.ptile60, t2.ptile70, t2.ptile80, t2.ptile90 from factor_ret_distribution t1, distribution_result t2 where t1.ret9 = t2.related_id
+union all
+select 'ret10', t1.factor_case, t1.param_value, t2.max, t2.min, t2.scope, t2.mean, t2.median, t2.std, t2.var, t2.ptile10, t2.ptile20, t2.ptile30, t2.ptile40, t2.ptile50, t2.ptile60, t2.ptile70, t2.ptile80, t2.ptile90 from factor_ret_distribution t1, distribution_result t2 where t1.ret10 = t2.related_id;
