@@ -2,6 +2,7 @@
 # -*- coding:utf8 -*-
 
 import pandas as pd
+import numpy as np
 
 import os,sys 
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) 
@@ -22,13 +23,19 @@ class MomentumPenetration(Factor):
     def __init__(self, params):
         self._params = params
     
-    def caculate(self, data):
-        data['momentum.' + str(self._params[0])] = data['close'] - data['close'].shift(self._params[0])
-        #只取穿透点
-        data[MomentumPenetration.factor_code] = 0
-        data.loc[(data['momentum.' + str(self._params[0])].shift(1) < 0) & (data['momentum.' + str(self._params[0])] > 0), MomentumPenetration.factor_code] = data['momentum.' + str(self._params[0])] - data['momentum.' + str(self._params[0])].shift(1)
-        data.loc[(data['momentum.' + str(self._params[0])].shift(1) > 0) & (data['momentum.' + str(self._params[0])] < 0), MomentumPenetration.factor_code] = data['momentum.' + str(self._params[0])] - data['momentum.' + str(self._params[0])].shift(1)
+    def caculate(self, data, create_signal = True):
+        for param in self._params:
+            data[self.get_key(param)] = data['close'] - data['close'].shift(param)
+            if create_signal:
+                data[self.get_signal(param)] = data[self.get_key(param)].rolling(2).apply(lambda item: self.get_action_mapping(param, item))
         return data 
+    
+    def get_action_mapping(self, param, item):
+        key_list = item.tolist()
+        if key_list[0] < 0 and key_list[1] > 0:
+            return 1
+        else:
+            return 0
     
 # 动量回归
 class MomentumRegression(Factor):
@@ -39,13 +46,20 @@ class MomentumRegression(Factor):
     def __init__(self, params):
         self._params = params
     
-    def caculate(self, data):
-        indicator = MovingAverage([self._params[0]])
+    def caculate(self, data, create_signal = True):
+        indicator = MovingAverage(self._params)
         data = indicator.enrich(data)
-        data['momentum.' + str(self._params[0])] = (data['close'] - data['mean.'+str(self._params[0])])/data['mean.'+str(self._params[0])]
-        #只取穿透点
-        data[MomentumRegression.factor_code] = 0
+        for param in self._params: 
+            data[self.get_key(param)] = (data['close'] - data[indicator.get_key(param)]) / data[indicator.get_key(param)]
+            if create_signal:
+                data[self.get_signal(param)] = data.apply(lambda item: self.get_action_mapping(param, item), axis = 1)
         return data 
+    
+    def get_action_mapping(self, param, item):
+        if (item[self.get_key(param)] < -0.1):
+            return 1
+        else:
+            return 0
 
 # 离散指标
 class DiscreteIndex(Factor):
@@ -259,8 +273,8 @@ if __name__ == '__main__':
     #图像分析
     data = FileUtils.get_file_by_ts_code('688819.SH', is_reversion = True)
     # # factor = MACDPenetration([])
-    # # factor = MomentumPenetration([20])
-    # factor = MomentumRegression([10])
+    # factor = MomentumPenetration([20])
+    factor = MomentumRegression([20])
     # # factor = DiscreteIndex([10, 40])
     # factor = KDJRegression([9])
     # factor = DRFPenetration([0.3])
@@ -268,13 +282,13 @@ if __name__ == '__main__':
     # factor = UOPenetration([7, 14, 28])
     # factor = RVIPenetration([10])
     # data = factor.caculate(data)
-    factor = SOPenetration([10])
+    # factor = SOPenetration([10])
     data = factor.caculate(data)
     data['index_trade_date'] = pd.to_datetime(data['trade_date'])
     data = data.set_index(['index_trade_date'])
-    draw_analysis_curve(data[(data['trade_date'] <= '20220125') & (data['trade_date'] > '20210101')], volume = False, show_signal = True, signal_keys = ['SO.10','so_penetration'])
+    draw_analysis_curve(data[(data['trade_date'] <= '20220125') & (data['trade_date'] > '20210101')], volume = False, show_signal = True, signal_keys = [factor.get_key(20), factor.get_signal(20), 'moving_average.20'])
     print('aa')
-    print(factor.score(data))
+    # print(factor.score(data))
     
     #模拟
     # data = FileUtils.get_file_by_ts_code('002531.SZ', is_reversion = False)

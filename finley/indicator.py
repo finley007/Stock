@@ -16,17 +16,20 @@ class Indicator(metaclass = ABCMeta):
     key = ''
     _params = []
     
+    def get_params(self):
+        return self._params
+
+    def get_key(self, param):
+        return self.key + '.' + str(param)
+
+    def get_keys(self):
+        return list(map(lambda param: self.key + '.' + str(param), self._params))
+    
     #静态数据部分
     @abstractclassmethod
     def enrich(self, data):
         pass
     
-    def get_params(self):
-        return self._params;
-    
-    @classmethod
-    def get_key(clz):
-        return clz.key
 
 # 包络线基类  
 class Envelope(Indicator):
@@ -381,13 +384,15 @@ class AdvanceKeltnerEnvelope(Envelope):
 # 移动平均线
 class MovingAverage(Indicator):
     
+    key = 'moving_average'
+    
     def __init__(self, params):
         self._params = params
         
     def enrich(self, data):
         if self._params:
             for param in self._params:
-                data["mean."+str(param)] = data["close"].rolling(param).mean()
+                data[self.get_key(param)] = data["close"].rolling(param).mean()
         return data
     
 # 自定义移动平均线
@@ -509,6 +514,8 @@ class MACD(Indicator):
 
 # 离散指标包络
 class DIEnvelope(Envelope):
+    
+    key = 'di_envelope'
     
     def __init__(self, params):
         self._params = params
