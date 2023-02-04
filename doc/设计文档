@@ -10,7 +10,7 @@
 
 
 基于以上两种盈利思路，对于因子设计：
-1. 因子值是连续型变量，计算函数：caculate
+1. 因子值是连续型变量，计算函数：caculate，因子的逻辑应该尽可能放在caculate里而非get_action_mapping
 2. 因子值到信号量有个映射函数，get_action_mapping
 
 思路
@@ -26,3 +26,7 @@
 2. 增加factor_analysis表和factor_ret_distribution表 - ok
 3. 增加orm框架 - ok
 4. 完成因子扫描逻辑 - ok
+
+问题：
+1. 基于新的因子设计，突破的概念怎么在映射函数里表示？
+    至少需要两天的记录，所以要修改get_action_mapping参数
