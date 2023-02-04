@@ -273,7 +273,7 @@ if __name__ == '__main__':
     #图像分析
     data = FileUtils.get_file_by_ts_code('688819.SH', is_reversion = True)
     # # factor = MACDPenetration([])
-    # factor = MomentumPenetration([20])
+    factor = MomentumPenetration([20])
     factor = MomentumRegression([20])
     # # factor = DiscreteIndex([10, 40])
     # factor = KDJRegression([9])
