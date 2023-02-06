@@ -273,14 +273,16 @@ class FactorCase(Base):
 
     id = Column(String(128), primary_key=True)
     factor = Column(String(64))
+    package = Column(String(64))
     version = Column(String(10))
     param = Column(String(50))
     threshold = Column(String(50))
     created_time = Column(DateTime)
     modified_time = Column(DateTime)
 
-    def __init__(self, factor, version, param, threshold):
+    def __init__(self, package, factor, version, param, threshold):
         self.id = '_'.join([factor, version, param, threshold])
+        self.package = package
         self.factor = factor
         self.version = version
         self.param = param
@@ -417,6 +419,18 @@ class SectionStockMapping(Base):
         self.section_code = section_code
         self.ts_code = ts_code
         
+class BaseDao():
+    
+    def __init__(self):
+        self._session = create_session()
+
+
+class FactorCaseDao(BaseDao):
+    
+        def get_factor_case_list_by_combination(self, combination_id):
+            result_list = self._session.execute('select t3.*, t2.param from factor_combination t1, factor_combination_mapping t2, factor_case t3 where t1.id = t2.combination_id and t2.case_id = t3.id and t1.id = :combincation_id', {'combincation_id' : combination_id}).fetchall()
+            return result_list
+    
 if __name__ == '__main__':
     # dao = DaoMysqlImpl()
     # print(dao.select('select * from static_stock_list'))
@@ -448,7 +462,7 @@ if __name__ == '__main__':
     # print(dao.get_stock_list())
     
     # po测试
-    session = create_session()
+    # session = create_session()
 
     # test_po = Test('test1', 40, '2022-12-18', '2022-12-18 02:12:13', '12:12:13')
     # session.add(test_po)
@@ -458,7 +472,9 @@ if __name__ == '__main__':
     # test_po.int_column = 30
     # session.commit()
 
-    result = session.query(SectionStockMapping).filter(SectionStockMapping.section_code.in_(['BK0636','BK0428'])).all()
-    stock_list = list(map(lambda item : item.ts_code, result))
-    print(stock_list)
+    # result = session.query(SectionStockMapping).filter(SectionStockMapping.section_code.in_(['BK0636','BK0428'])).all()
+    # stock_list = list(map(lambda item : item.ts_code, result))
+    # print(stock_list)
     
+    factor_case_dao = FactorCaseDao()
+    print(factor_case_dao.get_factor_case_list_by_combination('factor_combination1'))

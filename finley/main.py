@@ -13,7 +13,7 @@ from factor.trend_factor import MeanInflectionPoint, MeanTrend, MeanPenetration,
 from factor.momentum_factor import KDJRegression, RSIPenetration, DRFPenetration, SOPenetration
 from factor.volume_factor import MFIPenetration, OBVTrend, FIPenetration
 from filter import NewStockFilter, STFilter, create_filter_list, filter_stock
-from persistence import DaoMysqlImpl, FileUtils, create_session, FactorAnalysis, DistributionResult, FactorRetDistribution
+from persistence import DaoMysqlImpl, FileUtils, create_session, FactorAnalysis, DistributionResult, FactorRetDistribution, FactorCaseDao
 from analysis import correlation_analysis, select_stock, retro_select_stock, position_analysis
 from visualization import draw_histogram
 from synchronization import incremental_synchronize_stock_daily_data, synchronize_all_stock, synchronize_stock_daily_data
@@ -151,7 +151,7 @@ def run_factor_analysis(package, factor_case_exp, filters, ts_code = ''):
         session.commit()
     
 @run_with_timecost    
-def run_factor_ret_distribution_analysis(package, factor_case_exp, filters, ts_code = ''):
+def run_factor_ret_distribution_analysis(package, factor_case_exp, filters='', ts_code = ''):
     """
     分析因子值收益率的分布
     """
@@ -221,6 +221,89 @@ def parse_factor_case(factor_case):
     例子： MeanInflectionPoint_v1.0_5_0.8_20210101_20210929
     """
     return factor_case.split('_')
+
+@run_with_timecost    
+def run_combination_factor_ret_distribution_analysis(combination_id, filters='', ts_code = ''):
+    """
+    分析因子值收益率的分布
+    """
+    ret_schema_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    persistence = DaoMysqlImpl()
+    session = create_session()
+    factor_case_dao = FactorCaseDao()
+    factor_case_list = factor_case_dao.get_factor_case_list_by_combination(combination_id)
+    print(factor_case_list)
+    factor_list = []
+    if len(factor_case_list) == 0:
+        return
+    for case in factor_case_list:
+        factor_case = parse_factor_case(case[0])
+        factor = create_instance(case[7], factor_case[0], to_params(factor_case[2]))
+        factor_list.append(factor)
+    filter_stock_list = []
+    if ts_code == '':
+        filter_list = create_filter_list(filters)
+        stock_list = persistence.select("select ts_code from static_stock_list")
+        stock_list = list(map(lambda item:item[0], stock_list))
+        for stock in stock_list:
+            data = FileUtils.get_file_by_ts_code(stock, is_reversion = True)
+            if (len(data) > 0 and (len(filter_list) == 0 or filter_stock(filter_list, data))):
+                filter_stock_list.append(stock)
+    else:
+        # stock_list = persistence.select("select ts_code from static_stock_list where ts_code = '" + ts_code + "'")
+        stock_list = persistence.select("select ts_code from static_stock_list where ts_code in ('688618.sh','688619.sh')")
+        filter_stock_list = list(map(lambda item:item[0], stock_list))
+    data = pd.DataFrame()
+    for stock in filter_stock_list:
+        temp_data = FileUtils.get_file_by_ts_code(stock, is_reversion = True)
+        for factor in factor_list:
+            temp_data = factor.caculate(temp_data)
+        temp_data = Factor.caculate_ret(temp_data, ret_schema_list)
+        temp_data = temp_data.dropna()
+        data = pd.concat([data, temp_data])
+    data = data.reset_index()
+    action_index_list = []
+    for factor in factor_list:
+        param = ''
+        for factor_case in factor_case_list:
+            if factor_case[1] == factor.__class__.__name__:
+                cur_factor_index_list = data[data[factor.get_signal(int(factor_case[8]))] == 1].index
+                action_index_list = action_index_list + cur_factor_index_list.to_list()
+    action_index_set = set(action_index_list)
+    action_index_list = list(action_index_set)
+    ret_id = []
+    for ret in ret_schema_list:
+        ret_list = data.loc[action_index_list]['ret.' + str(ret)].tolist()
+        ret = np.array(ret_list)
+        ret_ptile_array = np.percentile(ret, [10, 20, 30, 40, 50, 60, 70, 80, 90])
+        result = {
+                'max' : np.amax(ret),
+                'min' : np.amin(ret),
+                'scope' : np.ptp(ret),
+                'mean' : np.mean(ret),
+                'median' : np.median(ret),
+                'std' : np.std(ret),
+                'var' : np.var(ret),
+                'ptile10' : ret_ptile_array[0],
+                'ptile20' : ret_ptile_array[1],
+                'ptile30' : ret_ptile_array[2],
+                'ptile40' : ret_ptile_array[3],
+                'ptile50' : ret_ptile_array[4],
+                'ptile60' : ret_ptile_array[5],
+                'ptile70' : ret_ptile_array[6],
+                'ptile80' : ret_ptile_array[7],
+                'ptile90' : ret_ptile_array[8]
+        }
+        related_id = str(uuid.uuid4()).replace('-','')
+        ret_id.append(related_id)
+        file_name = str(uuid.uuid4()).replace('-','')
+        path = constants.REPORT_PATH + os.path.sep + 'factor_ret_distribution' + os.path.sep + str(file_name) + '.pkl'
+        FileUtils.save(ret_list, path)
+        distribution_result = DistributionResult(1, related_id, result, path)
+        session.add(distribution_result)
+    factor_ret_distribution = FactorRetDistribution(combination_id, filters, ret_id, '')
+    session.add(factor_ret_distribution)
+    session.commit()
         
         
 if __name__ == '__main__':
@@ -233,14 +316,16 @@ if __name__ == '__main__':
     # run_factor_analysis('factor.my_factor', 'FallingTrend_v1.0_10|15|20_0.9|0.8|0.7__', '')
     # run_factor_analysis('factor.my_factor', 'LowerHatch_v1.0_10_0.7__', '')
     # run_factor_analysis('factor.momentum_factor', 'MomentumPenetration_v1.0_20___', '')
-    run_factor_analysis('factor.momentum_factor', 'MomentumRegression_v1.0_20___', '')
+    # run_factor_analysis('factor.momentum_factor', 'MomentumRegression_v1.0_20___', '')
     # 因子收益率分布分析
     # run_factor_ret_distribution_analysis('factor.my_factor', 'RisingTrend_v1.0_5|10_0.8|0.7__', '')
     # run_factor_ret_distribution_analysis('factor.my_factor', 'FallingTrend_v1.0_10|15|20_0.9|0.8|0.7__', '')
     # run_factor_ret_distribution_analysis('factor.my_factor', 'LowerHatch_v1.0_10_0.7__', '')
     # run_factor_ret_distribution_analysis('factor.momentum_factor', 'MomentumPenetration_v1.0_10___', '')
     # run_factor_ret_distribution_analysis('factor.momentum_factor', 'MomentumPenetration_v1.0_20___', '')
-    # run_factor_ret_distribution_analysis('factor.momentum_factor', 'MomentumRegression_v1.0_20___', '')
+    # run_factor_ret_distribution_analysis('factor.momentum_factor', 'MomentumRegression_v1.0_20___', '', '688618.SH')
+    # 复合因子收益率分析
+    run_combination_factor_ret_distribution_analysis('factor_combination1', ts_code = '688618.sh')
     # 概率分布分析
     # factor = OBVTrend([0])
     # # 参数调优

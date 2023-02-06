@@ -25,9 +25,12 @@
 
 实现：
 1. 沿用factor_case表，增加版本字段，增加threshold存储门限值信息 - ok
+    1.1 增加因子组合表和关联表，factor_combination  factor_combination_mapping
+    1.2 factor_case增加package列
 2. 增加factor_analysis表和factor_ret_distribution表 - ok
 3. 增加orm框架 - ok
 4. 完成因子扫描逻辑 - ok
+
 
 问题：
 1. 基于新的因子设计，突破的概念怎么在映射函数里表示？

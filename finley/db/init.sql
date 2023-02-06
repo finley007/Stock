@@ -65,6 +65,7 @@ PRIMARY KEY(id)
 CREATE TABLE IF NOT EXISTS factor_case
 (
 id VARCHAR(128),
+package VARCHAR(64),
 factor VARCHAR(64),
 version  VARCHAR(10),
 param  VARCHAR(50),
@@ -347,6 +348,22 @@ ret9  VARCHAR(32),
 ret10  VARCHAR(32),
 created_time datetime,
 modified_time datetime,
+PRIMARY KEY(id)
+);
+
+CREATE TABLE IF NOT EXISTS factor_combination
+(
+id VARCHAR(128),
+remark VARCHAR(64),
+PRIMARY KEY(id)
+);
+
+CREATE TABLE IF NOT EXISTS factor_combination_mapping
+(
+id VARCHAR(32),
+combination_id VARCHAR(128),
+case_id VARCHAR(128),
+param VARCHAR(10),
 PRIMARY KEY(id)
 );
 
