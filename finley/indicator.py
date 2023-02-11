@@ -47,7 +47,7 @@ class Envelope(Indicator):
     
     # 默认用均线当中位线
     def get_middle_value_key(self, param):
-        return 'mean.' + str(param)
+        pass
     
     
 # 移动平均线
@@ -67,7 +67,7 @@ class MovingAverage(Indicator):
 # 指数移动平均线
 class ExpMovingAverage(Indicator):
     
-    key = 'mean'
+    key = 'exp_mean'
     
     def __init__(self, params):
         self._params = params
@@ -475,18 +475,27 @@ class Momentum(Indicator):
     
 # 离散指标
 class DI(Indicator):
+    """
+    （快周期均值-慢周期均值）/ 基于慢周期的价格增量标准差
+    """
+    
+    key = 'di'
     
     def __init__(self, params):
+        # 只包含两个值，一个快线值，一个慢线值
         self._params = params
         
+    def get_key(self):
+        return self.key + '.' + str(self._params[0]) + '.' + str(self._params[1])
+    
     def enrich(self, data):
         fast_indicator = MovingAverage([self._params[0]])
         data = fast_indicator.enrich(data)
         slow_indicator = MovingAverage([self._params[1]])
         data = slow_indicator.enrich(data)
-        data['diff.' + str(self._params[0]) + '.' + str(self._params[1])] = data['mean.'+str(self._params[0])] - data['mean.'+str(self._params[1])]
+        data['diff.' + str(self._params[0]) + '.' + str(self._params[1])] = data[fast_indicator.get_key(self._params[0])] - data[slow_indicator.get_key(self._params[1])]
         data['diff.' + str(self._params[1]) + '.stdev'] = (data['close'] - data['close'].shift(1)).rolling(self._params[1]).std()
-        data['di.' + str(self._params[0]) + '.' + str(self._params[1])] = data['diff.' + str(self._params[0]) + '.' + str(self._params[1])]/data['diff.' + str(self._params[1]) + '.stdev']
+        data[self.get_key()] = data['diff.' + str(self._params[0]) + '.' + str(self._params[1])]/data['diff.' + str(self._params[1]) + '.stdev']
         return data
 
 # MACD
@@ -519,19 +528,22 @@ class DIEnvelope(Envelope):
     
     def __init__(self, params):
         self._params = params
+        self._indicator = DI(self._params)
         
     def enrich(self, data):
-        di_indicator = DI(self._params)
-        data = di_indicator.enrich(data)
-        data[self.get_high_value_key(str(self._params[0])+'.'+str(self._params[1]))] = data["di."+str(di_indicator.get_params()[0])+'.'+str(di_indicator.get_params()[1])].rolling(di_indicator.get_params()[1]).std()
-        data[self.get_low_value_key(str(self._params[0])+'.'+str(self._params[1]))] = -data["di."+str(di_indicator.get_params()[0])+'.'+str(di_indicator.get_params()[1])].rolling(di_indicator.get_params()[1]).std()
+        data = self._indicator.enrich(data)
+        data[self.get_high_value_key()] = data[self._indicator.get_key()].rolling(self._params[1]).std()
+        data[self.get_low_value_key()] = -data[self._indicator.get_key()].rolling(self._params[1]).std()
         return data
     
-    def get_high_value_key(self, param):
-        return 'di_band_envelope_high.'+str(param)
+    def get_high_value_key(self):
+        return self.key + '.high.' + str(self._params[0]) + '.' + str(self._params[1])
     
-    def get_low_value_key(self, param):
-        return 'di_band_envelope_low.'+str(param)
+    def get_low_value_key(self):
+        return self.key + '.low.' + str(self._params[0]) + '.' + str(self._params[1])
+    
+    def get_middle_value_key(self):
+        return self._indicator.get_key()
     
 # RSI
 class RSI(Indicator):

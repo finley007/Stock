@@ -9,7 +9,7 @@ parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0,parentdir) 
 from persistence import FileUtils
 from visualization import draw_analysis_curve
-from indicator import MACD, MovingAverage, DIEnvelope, RSI, KDJ, DRF, WR, UO, RVI, SO
+from indicator import MACD, MovingAverage, DIEnvelope, RSI, KDJ, DRF, WR, UO, RVI, SO, DI
 from simulator import simulate 
 from factor.base_factor import Factor
 import tools
@@ -69,13 +69,35 @@ class DiscreteIndex(Factor):
         
     def __init__(self, params):
         self._params = params
+        
+    def get_key(self):
+        return self.factor_code + '.' + str(self._params[0]) + '.' + str(self._params[1])
     
-    def caculate(self, data):
-        indicator = DIEnvelope([self._params])
+    def get_high_value_key(self):
+        return self.factor_code + '.high.' + str(self._params[0]) + '.' + str(self._params[1])
+    
+    def get_middle_value_key(self):
+        return self.factor_code + '.middle.' + str(self._params[0]) + '.' + str(self._params[1])
+    
+    def get_signal(self):
+        return self.factor_code + '.' + str(self._params[0]) + '.' + str(self._params[1]) + '.signal'
+    
+    def caculate(self, data, create_signal = True):
+        indicator = DIEnvelope(self._params)
         data = indicator.enrich(data)
-        #只取穿透点
-        data[DiscreteIndex.factor_code] = 0
-        return data       
+        data[self.get_middle_value_key()] = data[indicator.get_middle_value_key()]
+        data[self.get_high_value_key()] = data[indicator.get_high_value_key()]
+        data[self.get_key()] = data[self.get_middle_value_key()] - data[self.get_high_value_key()]
+        if create_signal:
+            data[self.get_signal()] = data[[self.get_key()]].rolling(2).apply(lambda item: self.get_action_mapping(item))
+        return data  
+    
+    def get_action_mapping(self, item):
+        key_list = item.tolist()
+        if key_list[0] < 0 and key_list[1] > 0:
+            return 1
+        else:
+            return 0   
 
 # MACD
 class MACDPenetration(Factor):
@@ -273,9 +295,9 @@ if __name__ == '__main__':
     #图像分析
     data = FileUtils.get_file_by_ts_code('688819.SH', is_reversion = True)
     # # factor = MACDPenetration([])
-    factor = MomentumPenetration([20])
-    factor = MomentumRegression([20])
-    # # factor = DiscreteIndex([10, 40])
+    # factor = MomentumPenetration([20])
+    # factor = MomentumRegression([20])
+    factor = DiscreteIndex([10, 40])
     # factor = KDJRegression([9])
     # factor = DRFPenetration([0.3])
     # factor = WRRegression([30])
@@ -286,7 +308,7 @@ if __name__ == '__main__':
     data = factor.caculate(data)
     data['index_trade_date'] = pd.to_datetime(data['trade_date'])
     data = data.set_index(['index_trade_date'])
-    draw_analysis_curve(data[(data['trade_date'] <= '20220125') & (data['trade_date'] > '20210101')], volume = False, show_signal = True, signal_keys = [factor.get_key(20), factor.get_signal(20), 'moving_average.20'])
+    draw_analysis_curve(data[(data['trade_date'] <= '20220125') & (data['trade_date'] > '20210101')], volume = False, show_signal = True, signal_keys = [factor.get_key()])
     print('aa')
     # print(factor.score(data))
     
