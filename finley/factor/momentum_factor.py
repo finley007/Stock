@@ -99,6 +99,18 @@ class DiscreteIndex(Factor):
         else:
             return 0   
 
+    def get_factor_value_list(self, param, sub_list, start_date = '', end_date = ''):
+        for stock in sub_list:
+            print('Handle stock: ' + stock)
+            data = FileUtils.get_file_by_ts_code(stock)
+            data = self.caculate(data)
+            data = data.dropna()
+            if start_date != '':
+                data = data[data['date'] >= start_date]
+            if end_date != '':
+                data = data[data['date'] <= start_date]
+        return data[self.get_key()].tolist()
+
 # MACD
 class MACDPenetration(Factor):
     
