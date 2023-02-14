@@ -179,10 +179,45 @@ def run_factor_ret_distribution_analysis(package, factor_case_exp, filters='', t
         temp_data = Factor.caculate_ret(temp_data, ret_schema_list)
         temp_data = temp_data.dropna()
         data = pd.concat([data, temp_data])
-    for param in factor.get_params():
+    if isinstance(factor.get_params(),list):
+        for param in factor.get_params():
+            ret_id = []
+            for ret in ret_schema_list:
+                ret_list = data[data[factor.get_signal(param)] == 1]['ret.' + str(ret)].tolist()
+                ret = np.array(ret_list)
+                ret_ptile_array = np.percentile(ret, [10, 20, 30, 40, 50, 60, 70, 80, 90])
+                result = {
+                        'max' : np.amax(ret),
+                        'min' : np.amin(ret),
+                        'scope' : np.ptp(ret),
+                        'mean' : np.mean(ret),
+                        'median' : np.median(ret),
+                        'std' : np.std(ret),
+                        'var' : np.var(ret),
+                        'ptile10' : ret_ptile_array[0],
+                        'ptile20' : ret_ptile_array[1],
+                        'ptile30' : ret_ptile_array[2],
+                        'ptile40' : ret_ptile_array[3],
+                        'ptile50' : ret_ptile_array[4],
+                        'ptile60' : ret_ptile_array[5],
+                        'ptile70' : ret_ptile_array[6],
+                        'ptile80' : ret_ptile_array[7],
+                        'ptile90' : ret_ptile_array[8]
+                }
+                related_id = str(uuid.uuid4()).replace('-','')
+                ret_id.append(related_id)
+                file_name = str(uuid.uuid4()).replace('-','')
+                path = constants.REPORT_PATH + os.path.sep + 'factor_ret_distribution' + os.path.sep + str(file_name) + '.pkl'
+                FileUtils.save(ret_list, path)
+                distribution_result = DistributionResult(1, related_id, result, path)
+                session.add(distribution_result)
+            factor_ret_distribution = FactorRetDistribution(factor_case_exp, filters, ret_id, factor.get_params(param))
+            session.add(factor_ret_distribution)
+            session.commit()
+    else:
         ret_id = []
         for ret in ret_schema_list:
-            ret_list = data[data[factor.get_signal(param)] == 1]['ret.' + str(ret)].tolist()
+            ret_list = data[data[factor.get_signal()] == 1]['ret.' + str(ret)].tolist()
             ret = np.array(ret_list)
             ret_ptile_array = np.percentile(ret, [10, 20, 30, 40, 50, 60, 70, 80, 90])
             result = {
@@ -210,7 +245,7 @@ def run_factor_ret_distribution_analysis(package, factor_case_exp, filters='', t
             FileUtils.save(ret_list, path)
             distribution_result = DistributionResult(1, related_id, result, path)
             session.add(distribution_result)
-        factor_ret_distribution = FactorRetDistribution(factor_case_exp, filters, ret_id, param)
+        factor_ret_distribution = FactorRetDistribution(factor_case_exp, filters, ret_id, factor.get_params())
         session.add(factor_ret_distribution)
         session.commit()
         

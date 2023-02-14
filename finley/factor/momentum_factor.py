@@ -81,6 +81,9 @@ class DiscreteIndex(Factor):
     
     def get_signal(self):
         return self.factor_code + '.' + str(self._params[0]) + '.' + str(self._params[1]) + '.signal'
+
+    def get_params(self):
+        return str(self._params[0]) + '_' + str(self._params[1])
     
     def caculate(self, data, create_signal = True):
         indicator = DIEnvelope(self._params)
