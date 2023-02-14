@@ -120,23 +120,36 @@ class MACDPenetration(Factor):
     factor_code = 'macd_penetration'
     version = '1.0'
         
-    def __init__(self, params):
+    def __init__(self, params=[12, 26, 9]):
         self._params = params
+        
+    def get_key(self):
+        return self.factor_code + '.' + str(self._params[0]) + '.' + str(self._params[1]) + '.' + str(self._params[2])
     
-    def caculate(self, data):
+    def get_signal(self):
+        return self.factor_code + '.' + str(self._params[0]) + '.' + str(self._params[1])  + '.' + str(self._params[2]) + '.signal'
+
+    def get_params(self):
+        return str(self._params[0]) + '_' + str(self._params[1]) + '_' + str(self._params[1])
+    
+    def caculate(self, data, create_signal=True):
         indicator = MACD(self._params)
         data = indicator.enrich(data)
-        data['prev_gap'] = data['DIFF'].shift(1) - data['DEA'].shift(1)
-        data['cur_gap'] = data['DIFF'] - data['DEA']
-        data = data.dropna()
+        data[self.get_key()] = data[indicator.get_key()]
         data[MACDPenetration.factor_code] = 0
-        #金叉
-        data.loc[(data['prev_gap'] < 0) & (data['cur_gap'] > 0) & (data['DIFF'] > 0), MomentumRegression.factor_code] = abs(data['prev_gap']) + abs(data['cur_gap'])
-        #死叉
-        data.loc[(data['prev_gap'] > 0) & (data['cur_gap'] < 0) & (data['DIFF'] > 0), MomentumRegression.factor_code] = -(abs(data['prev_gap']) + abs(data['cur_gap']))
+        if create_signal:
+            data['golden_cross'] = data[[self.get_key()]].rolling(2).apply(lambda item: self.get_action_mapping(item))
+            data[self.get_signal()] = data[(data['golden_cross'] == 1) & (data['DIFF'] > 0) & (data['DEA'] > 0)]['golden_cross']
         return data  
     
-   
+    def get_action_mapping(self, item):
+        key_list = item.tolist()
+        # 金叉
+        if key_list[0] < 0 and key_list[1] > 0:
+            return 1
+        else:
+            return 0  
+        
 # RSI突破
 class RSIPenetration(Factor):
     

@@ -501,24 +501,30 @@ class DI(Indicator):
 # MACD
 class MACD(Indicator):
     
+    key = 'macd'
+    
     _fast_period = 12
     _slow_period = 26
     _dea_period = 9
     
-    def __init__(self, params):
-        self._params = params
-        if (len(self._params) >= 3):
-            self._fast_period = self._params[0]
-            self._slow_period = self._params[1]
-            self._dea_period = self._params[2]
+    def __init__(self, params=[]):
+        if (len(params) >= 3):
+            self._fast_period = params[0]
+            self._slow_period = params[1]
+            self._dea_period = params[2]
+            
+    def get_key(self):
+        return self.key + '.' + str(self._fast_period) + '.' + str(self._slow_period) + '.' + str(self._dea_period)
         
     def enrich(self, data):
+        #12日平滑移动平均值
         data['fast.period'+str(self._fast_period)] = data['close'].ewm(alpha=2 / (self._fast_period + 1), adjust=False).mean()
+        #26日平滑移动平均值
         data['slow.period'+str(self._slow_period)] = data['close'].ewm(alpha=2 / (self._slow_period + 1), adjust=False).mean()
-        
         data['DIFF'] = data['fast.period'+str(self._fast_period)] - data['slow.period'+str(self._slow_period)]
+        #对DIFF做9日平滑移动平均值
         data['DEA'] = data['DIFF'].ewm(alpha=2 / (self._dea_period + 1), adjust=False).mean()
-        data['MACD'] = 2 * (data['DIFF'] - data['DEA'])
+        data[self.get_key()] = 2 * (data['DIFF'] - data['DEA'])
         return data
 
 # 离散指标包络
