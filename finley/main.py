@@ -353,6 +353,7 @@ if __name__ == '__main__':
     # run_factor_analysis('factor.momentum_factor', 'MomentumPenetration_v1.0_20___', '')
     # run_factor_analysis('factor.momentum_factor', 'MomentumRegression_v1.0_20___', '')
     # run_factor_analysis('factor.momentum_factor', 'DiscreteIndex_v1.0_10|40___', '')
+    run_factor_analysis('factor.momentum_factor', 'MACDPenetration_v1.0_12|16|9___', '')
     # 因子收益率分布分析
     # run_factor_ret_distribution_analysis('factor.my_factor', 'RisingTrend_v1.0_5|10_0.8|0.7__', '')
     # run_factor_ret_distribution_analysis('factor.my_factor', 'FallingTrend_v1.0_10|15|20_0.9|0.8|0.7__', '')
@@ -360,7 +361,8 @@ if __name__ == '__main__':
     # run_factor_ret_distribution_analysis('factor.momentum_factor', 'MomentumPenetration_v1.0_10___', '')
     # run_factor_ret_distribution_analysis('factor.momentum_factor', 'MomentumPenetration_v1.0_20___', '')
     # run_factor_ret_distribution_analysis('factor.momentum_factor', 'MomentumRegression_v1.0_20___', '', '688618.SH')
-    run_factor_ret_distribution_analysis('factor.momentum_factor', 'DiscreteIndex_v1.0_10|40___', '', '')
+    # run_factor_ret_distribution_analysis('factor.momentum_factor', 'DiscreteIndex_v1.0_10|40___', '', '')
+    run_factor_ret_distribution_analysis('factor.momentum_factor', 'MACDPenetration_v1.0_12|16|9___', '', '')
     # 复合因子收益率分析
     # run_combination_factor_ret_distribution_analysis('factor_combination1')
     # 概率分布分析

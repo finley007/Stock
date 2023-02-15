@@ -185,6 +185,10 @@ class Factor(metaclass = ABCMeta):
     #获取可视化参数列表
     def obtain_visual_monitoring_parameters(self):
         return [self.get_factor_code()]
+
+class CombinedParamFactor(Factor):
+
+    
     
 if __name__ == '__main__':
     print(Factor.get_factor_by_code('factor.momentum_factor','kdj_regression'))
