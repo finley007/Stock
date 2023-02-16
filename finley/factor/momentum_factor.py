@@ -11,7 +11,7 @@ from persistence import FileUtils
 from visualization import draw_analysis_curve
 from indicator import MACD, MovingAverage, DIEnvelope, RSI, KDJ, DRF, WR, UO, RVI, SO, DI
 from simulator import simulate 
-from factor.base_factor import Factor
+from factor.base_factor import Factor, CombinedParamFactor
 import tools
 
 # 动量突破
@@ -62,7 +62,7 @@ class MomentumRegression(Factor):
             return 0
 
 # 离散指标
-class DiscreteIndex(Factor):
+class DiscreteIndex(CombinedParamFactor):
     
     factor_code = 'discrete_index'
     version = '1.0'
@@ -70,20 +70,11 @@ class DiscreteIndex(Factor):
     def __init__(self, params):
         self._params = params
         
-    def get_key(self):
-        return self.factor_code + '.' + str(self._params[0]) + '.' + str(self._params[1])
-    
     def get_high_value_key(self):
         return self.factor_code + '.high.' + str(self._params[0]) + '.' + str(self._params[1])
     
     def get_middle_value_key(self):
         return self.factor_code + '.middle.' + str(self._params[0]) + '.' + str(self._params[1])
-    
-    def get_signal(self):
-        return self.factor_code + '.' + str(self._params[0]) + '.' + str(self._params[1]) + '.signal'
-
-    def get_params(self):
-        return str(self._params[0]) + '_' + str(self._params[1])
     
     def caculate(self, data, create_signal = True):
         indicator = DIEnvelope(self._params)
@@ -123,15 +114,6 @@ class MACDPenetration(Factor):
     def __init__(self, params=[12, 26, 9]):
         self._params = params
         
-    def get_key(self):
-        return self.factor_code + '.' + str(self._params[0]) + '.' + str(self._params[1]) + '.' + str(self._params[2])
-    
-    def get_signal(self):
-        return self.factor_code + '.' + str(self._params[0]) + '.' + str(self._params[1])  + '.' + str(self._params[2]) + '.signal'
-
-    def get_params(self):
-        return str(self._params[0]) + '_' + str(self._params[1]) + '_' + str(self._params[1])
-    
     def caculate(self, data, create_signal=True):
         indicator = MACD(self._params)
         data = indicator.enrich(data)

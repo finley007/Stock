@@ -187,8 +187,77 @@ class Factor(metaclass = ABCMeta):
         return [self.get_factor_code()]
 
 class CombinedParamFactor(Factor):
+    """
+    组合参数因子，多个参数共同组合起来使用
+    """
 
+    def get_key(self):
+        return self.factor_code + '.' + '.'.join(self.params_tostring())
     
+    def get_signal(self):
+        return self.factor_code + '.' + '.'.join(self.params_tostring()) + '.signal'
+    
+    def get_params(self):
+        return '_'.join(self.params_tostring())
+    
+    def params_tostring(self):
+        return list(map(lambda param: str(param), self._params))
+    
+    def analyze(self, stock_list=[], start_date = '', end_date = ''):
+        """
+        分析因子的值域，分布，均值
+        """
+        statistics_result = {}
+        statistics_data = {}
+        factor_value_list = []
+        if len(stock_list) == 0:
+            persistence = DaoMysqlImpl()
+            stock_list = persistence.get_stock_list()
+        pagination = Pagination(stock_list, page_size=50)
+        runner = ProcessRunner(10)
+        while pagination.has_next():
+            sub_list = pagination.next()
+            runner.execute(self.get_factor_value_list, args = (sub_list, start_date, end_date))
+            results = runner.get_results()
+            for result in results:
+                factor_value_list = factor_value_list + result.get()
+        factor_value_array = np.array(factor_value_list)
+        ptile_array = np.percentile(factor_value_array, [10, 20, 30, 40, 50, 60, 70, 80, 90])
+        statistics_result = {
+        'max' : np.amax(factor_value_array),
+        'min' : np.amin(factor_value_array),
+        'scope' : np.ptp(factor_value_array),
+        'mean' : np.mean(factor_value_array),
+        'median' : np.median(factor_value_array),
+        'std' : np.std(factor_value_array),
+        'var' : np.var(factor_value_array),
+        'ptile10' : ptile_array[0],
+        'ptile20' : ptile_array[1],
+        'ptile30' : ptile_array[2],
+        'ptile40' : ptile_array[3],
+        'ptile50' : ptile_array[4],
+        'ptile60' : ptile_array[5],
+        'ptile70' : ptile_array[6],
+        'ptile80' : ptile_array[7],
+        'ptile90' : ptile_array[8]
+        }
+        statistics_data = factor_value_list
+        return statistics_result, statistics_data
+    
+    def get_factor_value_list(self, sub_list, start_date = '', end_date = ''):
+        """
+        计算因子值，为了多进程并行计算
+        """
+        for stock in sub_list:
+            print('Handle stock: ' + stock)
+            data = FileUtils.get_file_by_ts_code(stock)
+            data = self.caculate(data)
+            data = data.dropna()
+            if start_date != '':
+                data = data[data['date'] >= start_date]
+            if end_date != '':
+                data = data[data['date'] <= start_date]
+        return data[self.get_key()].tolist()
     
 if __name__ == '__main__':
     print(Factor.get_factor_by_code('factor.momentum_factor','kdj_regression'))

@@ -140,13 +140,23 @@ def run_factor_analysis(package, factor_case_exp, filters, ts_code = ''):
         stock_list = persistence.select("select ts_code from static_stock_list where ts_code = '" + ts_code + "'")
         filter_stock_list = list(map(lambda item:item[0], stock_list))
     result = factor.analyze(filter_stock_list)
-    for param in factor.get_params():
-        factor_analysis = FactorAnalysis(factor_case_exp, filters, param)
+    if isinstance(factor.get_params(),list):
+        for param in factor.get_params():
+            factor_analysis = FactorAnalysis(factor_case_exp, filters, param)
+            session.add(factor_analysis)
+            file_name = str(uuid.uuid4()).replace('-','')
+            path = constants.REPORT_PATH + os.path.sep + 'factor_analysis' + os.path.sep + str(file_name) + '.pkl'
+            FileUtils.save(result[1][param], path)
+            distribution_result = DistributionResult(0, factor_analysis.get_id(), result[0][param], path)
+            session.add(distribution_result)
+            session.commit()
+    else:
+        factor_analysis = FactorAnalysis(factor_case_exp, filters, factor.get_params())
         session.add(factor_analysis)
         file_name = str(uuid.uuid4()).replace('-','')
         path = constants.REPORT_PATH + os.path.sep + 'factor_analysis' + os.path.sep + str(file_name) + '.pkl'
-        FileUtils.save(result[1][param], path)
-        distribution_result = DistributionResult(0, factor_analysis.get_id(), result[0][param], path)
+        FileUtils.save(result[1], path)
+        distribution_result = DistributionResult(0, factor_analysis.get_id(), result[0], path)
         session.add(distribution_result)
         session.commit()
     
