@@ -93,6 +93,7 @@ max_loss_date VARCHAR(30),
 profit DECIMAL(10,2),
 profit_rate DECIMAL(10,2),
 version VARCHAR(10),
+type VARCHAR(10),
 created_date DATETIME not null default NOW(),
 PRIMARY KEY(id)
 );

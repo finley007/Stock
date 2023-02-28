@@ -262,7 +262,8 @@ class Simulator(metaclass = ABCMeta):
         if (save):
             factor_case = factor.get_factor_code() + '_' + str(factor.get_params()[0]) + '_' + start_date + '_' + end_date
             persistence = DaoMysqlImpl()
-            item = (uuid.uuid1(), factor_case, self.get_ts_code(data), start_date, end_date, str(len(action_records)), str(win_count), str(loss_count), str(max_profit), str(min_profit), str(max_profit_open_date), str(min_profit_open_date), str(profit), str(profit/data.iloc[-1]['close']), version, self.get_type(), datetime.now())
+            id = str(uuid.uuid4()).replace('-','')
+            item = (id, factor_case, self.get_ts_code(data), start_date, end_date, str(len(action_records)), str(win_count), str(loss_count), str(max_profit), str(min_profit), str(max_profit_open_date), str(min_profit_open_date), str(profit), str(profit/data.iloc[-1]['close']), version, self.get_type(), datetime.now())
             persistence.insert('insert into simulation_result values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)', [item])
     
     #校验
@@ -339,9 +340,8 @@ class StockSimulator(Simulator):
     
     #执行仿真
     def execute_simulate(self, data, factor, start_date, end_date, config = SimulationConfig()):
-        data.loc[:,'action'] = data.apply(lambda item:factor.get_action_mapping(item),axis=1)
-        buy_action_list = data[data['action'] == 1]
-        sell_action_list = data[data['action'] == -1]
+        buy_action_list = data[data[factor.get_signal()] == 1]
+        sell_action_list = data[data[factor.get_signal()] == -1]
         current_action = None
         action_records = []
         for action in buy_action_list.iterrows():

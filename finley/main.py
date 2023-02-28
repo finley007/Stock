@@ -57,20 +57,20 @@ def return_distribution_statistics(factor):
     data = factor.caculate(data)
 
 @run_with_timecost    
-def run_single_factor_simulation(package, factor_case_code, ts_code = '', is_stock = True):
+def run_single_factor_simulation(package, factor_case_exp, ts_code = '', is_stock = True):
     persistence = DaoMysqlImpl()
-    factor_case = [('_'+factor_case_code).split('_')]
+    factor_case = parse_factor_case(factor_case_exp)
     # factor_case = persistence.select("select * from factor_case where id = '" + factor_case_code + "'")
-    factor = create_instance(package, factor_case[0][1], to_params(factor_case[0][2]))
+    factor = create_instance(package, factor_case[0], to_params(factor_case[2]))
     if (is_stock):
         simulator = StockSimulator()
-        if (ts_code != ''):
+        if (ts_code == ''):
             stock_list = persistence.select("select ts_code from static_stock_list")
         else:
             stock_list = persistence.select("select ts_code from static_stock_list where ts_code = '" + ts_code + "'")
         for stock in stock_list:
             data = FileUtils.get_file_by_ts_code(stock[0], is_reversion = True)
-            simulator.simulate(factor, data, factor_case[0][3])
+            simulator.simulate(factor, data, factor_case[3], factor_case[4])
     else:
         simulator = FutrueSimulator()
         if (ts_code == ''):
@@ -352,7 +352,7 @@ def run_combination_factor_ret_distribution_analysis(combination_id, filters='',
         
         
 if __name__ == '__main__':
-    # pre_check()
+    pre_check()
     # 相关性分析
     # factor = OBVTrend([0])
     # do_correlation_analysis(factor)
@@ -363,7 +363,7 @@ if __name__ == '__main__':
     # run_factor_analysis('factor.momentum_factor', 'MomentumPenetration_v1.0_20___', '')
     # run_factor_analysis('factor.momentum_factor', 'MomentumRegression_v1.0_20___', '')
     # run_factor_analysis('factor.momentum_factor', 'DiscreteIndex_v1.0_10|40___', '')
-    run_factor_analysis('factor.momentum_factor', 'MACDPenetration_v1.0_12|16|9___', '')
+    # run_factor_analysis('factor.momentum_factor', 'MACDPenetration_v1.0_12|16|9___', '')
     # 因子收益率分布分析
     # run_factor_ret_distribution_analysis('factor.my_factor', 'RisingTrend_v1.0_5|10_0.8|0.7__', '')
     # run_factor_ret_distribution_analysis('factor.my_factor', 'FallingTrend_v1.0_10|15|20_0.9|0.8|0.7__', '')
@@ -375,8 +375,6 @@ if __name__ == '__main__':
     run_factor_ret_distribution_analysis('factor.momentum_factor', 'MACDPenetration_v1.0_12|16|9___', '', '')
     # 复合因子收益率分析
     # run_combination_factor_ret_distribution_analysis('factor_combination1')
-    # 概率分布分析
-    # factor = OBVTrend([0])
     # # 参数调优
     # params = [4, 6, 8, 10, 12, 14, 16, 18, 20 ,22, 24, 26, 28 ,30,32,34,36,38,40]
     # ts_code = 'IF2204'
@@ -385,7 +383,7 @@ if __name__ == '__main__':
     #     run_single_factor_simulation('factor.trend_factor', code, ts_code, False)
         # print(code)
     # 单一因子模拟
-    # run_single_factor_simulation('factor.volume_factor', 'FIPenetration_26_20210101_20220812', False)
+    # run_single_factor_simulation('factor.momentum_factor', 'MACDPenetration_v1.0_12|16|9___')
     # 复合因子模拟
     # factor_list = []
     # factor_list.append(MeanPenetration([20]))

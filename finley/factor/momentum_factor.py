@@ -106,7 +106,7 @@ class DiscreteIndex(CombinedParamFactor):
         return data[self.get_key()].tolist()
 
 # MACD
-class MACDPenetration(Factor):
+class MACDPenetration(CombinedParamFactor):
     
     factor_code = 'macd_penetration'
     version = '1.0'
@@ -120,8 +120,11 @@ class MACDPenetration(Factor):
         data[self.get_key()] = data[indicator.get_key()]
         data[MACDPenetration.factor_code] = 0
         if create_signal:
-            data['golden_cross'] = data[[self.get_key()]].rolling(2).apply(lambda item: self.get_action_mapping(item))
-            data[self.get_signal()] = data[(data['golden_cross'] == 1) & (data['DIFF'] > 0) & (data['DEA'] > 0)]['golden_cross']
+            data['cross'] = data[[self.get_key()]].rolling(2).apply(lambda item: self.get_action_mapping(item))
+            # 金叉开仓
+            data.loc[(data['cross'] == 1) & (data['DIFF'] > 0) & (data['DEA'] > 0), self.get_signal()] = 1
+            # 死叉平仓
+            data.loc[(data['cross'] == -1), self.get_signal()] = 1
         return data  
     
     def get_action_mapping(self, item):
@@ -129,6 +132,8 @@ class MACDPenetration(Factor):
         # 金叉
         if key_list[0] < 0 and key_list[1] > 0:
             return 1
+        elif key_list[0] > 0 and key_list[1] < 0:
+            return -1
         else:
             return 0  
         
