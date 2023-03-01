@@ -32,6 +32,8 @@ class Datasource(metaclass = ABCMeta):
 
 class TushareDatasource(Datasource):
     
+    DAILY_PAGE_SIZE = 6000
+    
     def __init__(self):
         self.__token = '0c143eb70cae0d402803ea08ae1a05251928a82dc5a7274db069cb14'
         ts.set_token(self.__token)
@@ -59,7 +61,7 @@ if __name__ == '__main__':
     # print(datasource.get_stock_list())
     # print(datasource.get_calendar(start_date='20200101', end_date='20211231'))
     # print(datasource.daily_quotes('000001.SZ',start_date='19910101',end_date='20210801'))
-    # print(datasource.daily_indicator(trade_date='20210830'))
-    print(datasource.restoration_factor(ts_code = '603882.SH'))
+    print(datasource.daily_indicator(trade_date='20210830'))
+    # print(datasource.restoration_factor(ts_code = '603882.SH'))
     
     

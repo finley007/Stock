@@ -7,6 +7,9 @@ import webbrowser
 import inspect
 import constants
 
+"""
+时间日期相关函数
+"""
 def get_current_date():
     return datetime.now().strftime('%Y%m%d')
 
@@ -30,6 +33,11 @@ def get_time_base(time, unit):
     if unit == 1: #去掉秒和毫秒
         return time.replace(second = 0, microsecond = 0)
     return time
+
+def get_next_n_day(current_date, n):
+    current_date = datetime.strptime(current_date, "%Y%m%d")
+    current_date = current_date + timedelta(days=n)
+    return current_date.strftime("%Y%m%d")
 
 def split_by_dash(str):
     return str.split("_")
@@ -104,7 +112,7 @@ def open_url(url):
     webbrowser.open(url)
     
 if __name__ == '__main__':
-    # print(get_current_date())
+    print(get_current_date())
     # print(get_current_time())
     # print(parse_time('2021-01-08 09:33:00'))
     # print(get_date_scope('20210920','20210926'))
@@ -121,5 +129,5 @@ if __name__ == '__main__':
     # time = parse_time('2022-04-12 09:03:27.500000', True)
     # print(get_time_base(time, 1))
     # print(get_transaction_time('2022-04-12'))
-    print(date_format_convert('2022-05-08','%Y-%m-%d','%Y%m%d'))
+    # print(date_format_convert('2022-05-08','%Y-%m-%d','%Y%m%d'))
     # print(parse_time_from_time('2021-01-08 09:33:00'))

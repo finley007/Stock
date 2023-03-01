@@ -1,0 +1,13 @@
+获取股票列表
+stock_basic
+https://www.tushare.pro/document/2?doc_id=25
+获取日历
+trade_cal
+https://www.tushare.pro/document/2?doc_id=26
+获取个股日k线
+daily
+https://www.tushare.pro/document/2?doc_id=27 一次6000条数据
+获取个股日指标
+daily_basic
+复权
+adj_factor
