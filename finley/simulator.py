@@ -158,19 +158,71 @@ class LongAction(Action):
                     if ((row['high'] * self._stop_loss_rate) > self._stop_loss_price):
                         self._stop_loss_price = row['high'] * self._stop_loss_rate
 
+class ClosingStrategy(metaclass = ABCMeta):
+    """
+    平仓策略基类
+    """
+
+    _dao = DaoMysqlImpl()
+    
+    @abstractclassmethod
+    def close(self, data, factor, action):
+        pass
+
+class FixTimeClosingStragegy(ClosingStrategy):
+    """
+    固定时间平仓
+    """
+
+    def __init__(self, hold_time):
+        self._hold_time = hold_time
+
+    def close(self, data, factor, action):
+        open_date = action.get_open_date()
+        i = 0
+        close_price = []
+        while len(close_price) == 0:
+            close_date = self._dao.get_next_n_business_date(open_date, self._hold_time + i)
+            if close_date != '':
+                close_price = data[data['trade_date'] == close_date]['close']
+                i = i + 1
+            else:
+                return None
+        action.set_close_date(close_date, data)
+        action.set_close_price(close_price)
+        return action
+
 '''
 仿真器配置参数
 '''
-class SimulationConfig:
+class SimulationConfig():
     
+    #反向开仓
     _reverse_open = False
+    #平仓策略
+    _closing_stratege = FixTimeClosingStragegy(10)
+    #重复开仓
+    _repeat_opening = False
     
     def set_reverse_open(self, is_reverse_open):
         self._reverse_open = is_reverse_open
         
     def get_reverse_open(self):
         return self._reverse_open
-    
+
+    def set_closing_stratege(self, closing_stratege):
+        self._closing_stratege = closing_stratege
+
+    def get_closing_stratege(self):
+        return self._closing_stratege
+
+    def set_repeat_opening(self, repeat_opening):
+        self._repeat_opening = repeat_opening
+        
+    def get_repeat_opening(self):
+        return self._repeat_opening
+
+
 '''
 仿真器基类
 '''
@@ -191,9 +243,13 @@ class Simulator(metaclass = ABCMeta):
         start_date = filter_data[1]
         end_date = filter_data[2]
         #仿真
-        action_records = self.execute_simulate(data, factor, start_date, end_date, config)
-        self.print_simulate_result(factor, data, action_records, start_date, end_date, factor.get_version(), save)
-        return action_records
+        if len(factor.get_params()) > 0:
+            for param in factor.get_params():
+                action_records = self.execute_simulate(data, factor, start_date, end_date, param, config)
+                self.print_simulate_result(factor, data, action_records, start_date, end_date, factor.get_version(), param, save)
+        else:
+            action_records = self.execute_simulate(data, factor, start_date, end_date, config = config)
+            self.print_simulate_result(factor, data, action_records, start_date, end_date, factor.get_version(), save = save)
     
     #打印action矩阵
     def print_action_matrix(self, ts_code, factor, data, only_action=True):
@@ -204,7 +260,7 @@ class Simulator(metaclass = ABCMeta):
         data.to_csv(constants.TEMP_PATH + ts_code + '.csv', sep='\t',index=False, header=None)
         
     #结果处理
-    def print_simulate_result(self, factor, data, action_records, start_date, end_date, version, save = True):
+    def print_simulate_result(self, factor, data, action_records, start_date, end_date, version, param='', save = True):
         win_count = 0
         loss_count = 0
         profit = 0
@@ -263,8 +319,8 @@ class Simulator(metaclass = ABCMeta):
             factor_case = factor.get_factor_code() + '_' + str(factor.get_params()[0]) + '_' + start_date + '_' + end_date
             persistence = DaoMysqlImpl()
             id = str(uuid.uuid4()).replace('-','')
-            item = (id, factor_case, self.get_ts_code(data), start_date, end_date, str(len(action_records)), str(win_count), str(loss_count), str(max_profit), str(min_profit), str(max_profit_open_date), str(min_profit_open_date), str(profit), str(profit/data.iloc[-1]['close']), version, self.get_type(), datetime.now())
-            persistence.insert('insert into simulation_result values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)', [item])
+            item = (id, factor_case, self.get_ts_code(data), start_date, end_date, str(len(action_records)), str(win_count), str(loss_count), str(max_profit), str(min_profit), str(max_profit_open_date), str(min_profit_open_date), str(profit), str(profit/data.iloc[-1]['close']), str(param), version, self.get_type(), datetime.now())
+            persistence.insert('insert into simulation_result values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)', [item])
     
     #校验
     @abstractclassmethod
@@ -288,7 +344,7 @@ class Simulator(metaclass = ABCMeta):
     
     #执行仿真
     @abstractclassmethod
-    def execute_simulate(self, data, factor, start_date, end_date, config = SimulationConfig()):
+    def execute_simulate(self, data, factor, start_date, end_date, param ='', config = SimulationConfig()):
         pass
     
     #获取代码
@@ -339,38 +395,77 @@ class StockSimulator(Simulator):
         return data
     
     #执行仿真
-    def execute_simulate(self, data, factor, start_date, end_date, config = SimulationConfig()):
-        buy_action_list = data[data[factor.get_signal()] == 1]
-        sell_action_list = data[data[factor.get_signal()] == -1]
-        current_action = None
+    def execute_simulate(self, data, factor, start_date, end_date, param='', config = SimulationConfig()):
+        if param == '':
+            buy_action_list = data[data[factor.get_signal()] == 1]
+        else:
+            buy_action_list = data[data[factor.get_signal(param)] == 1]
         action_records = []
         for action in buy_action_list.iterrows():
             factor_date = action[1]['trade_date']
-            # 如果开仓时间比当前平仓时间小则跳过
-            if (current_action != None and factor_date <= current_action.get_close_date()):
-                continue
-            #当天出现交易信号第2天交易
             trade_date = self.get_action_date(data, factor, factor_date)
-            if (not data[data['trade_date'] == trade_date].empty):
-                current_action = LongAction(trade_date, data[data['trade_date'] == trade_date]['open'].iloc[0], data) 
-            else:
+            print('Open for {0}'.format(trade_date))
+            try:
+                action_records.append(LongAction(trade_date, data[data['trade_date'] == trade_date]['open'].iloc[0], data))
+            except Exception as e:
+                print('Stock{0} did not transaction on {1}'.format(data['ts_code'][0], trade_date))
                 continue
-            for action in sell_action_list.iterrows():
-                factor_date = action[1]['trade_date']
-                #找开仓日子后的第一个平仓信号
-                if (factor_date <= current_action.get_open_date()):
-                    continue
-                trade_date = self.get_action_date(data, factor, factor_date)
-                if (not data[data['trade_date'] == trade_date].empty):
-                    current_action.set_close_date(trade_date, data)
-                    current_action.set_close_price(data[data['trade_date'] == trade_date]['low'])
-                    break
-            if (current_action.get_close_date() == '' and not data[data['trade_date'] == end_date].empty):
-                current_action.set_close_date(end_date, data)
-                current_action.set_close_price(data[data['trade_date'] == end_date]['low'])
-            if (current_action.get_close_date() != ''):
-                action_records.append(current_action)
-        return action_records
+        # 计算平仓时间
+        closing_stratege = config.get_closing_stratege()
+        for action in action_records:
+            if not(closing_stratege.close(data, factor, action)):
+                action_records.remove(action)
+            print('Close for open date:{0} and close date:{1}'.format(action.get_open_date(), action.get_close_date()))
+        # 是否可重复开仓
+        if not config.get_repeat_opening():
+            action_sequence = []
+            for action in action_records:
+                print('Handle invalid action for {0}'.format(action.get_open_date()))
+                valid_action = True
+                for act in action_records:
+                    # 开仓时还有未平仓的单子
+                    if action.get_open_date() > act.get_open_date() and action.get_open_date() < act.get_close_date():
+                        valid_action = False
+                if valid_action:
+                    action_sequence.append(action)
+            return action_sequence
+        else:
+            return action_records
+
+        
+
+    # def execute_simulate(self, data, factor, start_date, end_date, config = SimulationConfig()):
+    #     buy_action_list = data[data[factor.get_signal()] == 1]
+    #     sell_action_list = data[data[factor.get_signal()] == -1]
+    #     current_action = None
+    #     action_records = []
+    #     for action in buy_action_list.iterrows():
+    #         factor_date = action[1]['trade_date']
+    #         # 如果开仓时间比当前平仓时间小则跳过
+    #         if (current_action != None and factor_date <= current_action.get_close_date()):
+    #             continue
+    #         #当天出现交易信号第2天交易
+    #         trade_date = self.get_action_date(data, factor, factor_date)
+    #         if (not data[data['trade_date'] == trade_date].empty):
+    #             current_action = LongAction(trade_date, data[data['trade_date'] == trade_date]['open'].iloc[0], data) 
+    #         else:
+    #             continue
+    #         for action in sell_action_list.iterrows():
+    #             factor_date = action[1]['trade_date']
+    #             #找开仓日子后的第一个平仓信号
+    #             if (factor_date <= current_action.get_open_date()):
+    #                 continue
+    #             trade_date = self.get_action_date(data, factor, factor_date)
+    #             if (not data[data['trade_date'] == trade_date].empty):
+    #                 current_action.set_close_date(trade_date, data)
+    #                 current_action.set_close_price(data[data['trade_date'] == trade_date]['low'])
+    #                 break
+    #         if (current_action.get_close_date() == '' and not data[data['trade_date'] == end_date].empty):
+    #             current_action.set_close_date(end_date, data)
+    #             current_action.set_close_price(data[data['trade_date'] == end_date]['low'])
+    #         if (current_action.get_close_date() != ''):
+    #             action_records.append(current_action)
+    #     return action_records
     
     def get_ts_code(self, data):
         return data.iloc[-1]['ts_code']

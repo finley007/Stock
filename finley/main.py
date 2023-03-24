@@ -10,7 +10,7 @@ import numpy as np
 
 from factor.my_factor import LowerHatch
 from factor.trend_factor import MeanInflectionPoint, MeanTrend, MeanPenetration, MeanTrendFirstDiff, MultipleMeanPenetration
-from factor.momentum_factor import KDJRegression, RSIPenetration, DRFPenetration, SOPenetration
+from factor.momentum_factor import KDJRegression, RSIRegression, DRFRegression, SOPenetration
 from factor.volume_factor import MFIPenetration, OBVTrend, FIPenetration
 from filter import NewStockFilter, STFilter, create_filter_list, filter_stock
 from persistence import DaoMysqlImpl, FileUtils, create_session, FactorAnalysis, DistributionResult, FactorRetDistribution, FactorCaseDao
@@ -60,7 +60,6 @@ def return_distribution_statistics(factor):
 def run_single_factor_simulation(package, factor_case_exp, ts_code = '', is_stock = True):
     persistence = DaoMysqlImpl()
     factor_case = parse_factor_case(factor_case_exp)
-    # factor_case = persistence.select("select * from factor_case where id = '" + factor_case_code + "'")
     factor = create_instance(package, factor_case[0], to_params(factor_case[2]))
     if (is_stock):
         simulator = StockSimulator()
@@ -221,7 +220,7 @@ def run_factor_ret_distribution_analysis(package, factor_case_exp, filters='', t
                 FileUtils.save(ret_list, path)
                 distribution_result = DistributionResult(1, related_id, result, path)
                 session.add(distribution_result)
-            factor_ret_distribution = FactorRetDistribution(factor_case_exp, filters, ret_id, factor.get_params(param))
+            factor_ret_distribution = FactorRetDistribution(factor_case_exp, filters, ret_id, str(param))
             session.add(factor_ret_distribution)
             session.commit()
     else:
@@ -231,22 +230,22 @@ def run_factor_ret_distribution_analysis(package, factor_case_exp, filters='', t
             ret = np.array(ret_list)
             ret_ptile_array = np.percentile(ret, [10, 20, 30, 40, 50, 60, 70, 80, 90])
             result = {
-                    'max' : np.amax(ret),
-                    'min' : np.amin(ret),
-                    'scope' : np.ptp(ret),
-                    'mean' : np.mean(ret),
-                    'median' : np.median(ret),
-                    'std' : np.std(ret),
-                    'var' : np.var(ret),
-                    'ptile10' : ret_ptile_array[0],
-                    'ptile20' : ret_ptile_array[1],
-                    'ptile30' : ret_ptile_array[2],
-                    'ptile40' : ret_ptile_array[3],
-                    'ptile50' : ret_ptile_array[4],
-                    'ptile60' : ret_ptile_array[5],
-                    'ptile70' : ret_ptile_array[6],
-                    'ptile80' : ret_ptile_array[7],
-                    'ptile90' : ret_ptile_array[8]
+                    'max' : round(np.amax(ret),5),
+                    'min' : round(np.amin(ret),5),
+                    'scope' : round(np.ptp(ret),5),
+                    'mean' :round( np.mean(ret),5),
+                    'median' : round(np.median(ret),5),
+                    'std' : round(np.std(ret),5),
+                    'var' : round(np.var(ret),5),
+                    'ptile10' : round(ret_ptile_array[0],5),
+                    'ptile20' : round(ret_ptile_array[1],5),
+                    'ptile30' : round(ret_ptile_array[2],5),
+                    'ptile40' : round(ret_ptile_array[3],5),
+                    'ptile50' : round(ret_ptile_array[4],5),
+                    'ptile60' : round(ret_ptile_array[5],5),
+                    'ptile70' : round(ret_ptile_array[6],5),
+                    'ptile80' : round(ret_ptile_array[7],5),
+                    'ptile90' : round(ret_ptile_array[8],5)
             }
             related_id = str(uuid.uuid4()).replace('-','')
             ret_id.append(related_id)
@@ -277,13 +276,12 @@ def run_combination_factor_ret_distribution_analysis(combination_id, filters='',
     session = create_session()
     factor_case_dao = FactorCaseDao()
     factor_case_list = factor_case_dao.get_factor_case_list_by_combination(combination_id)
-    print(factor_case_list)
     factor_list = []
     if len(factor_case_list) == 0:
         return
     for case in factor_case_list:
         factor_case = parse_factor_case(case[0])
-        factor = create_instance(case[7], factor_case[0], to_params(factor_case[2]))
+        factor = create_instance(case[1], factor_case[0], to_params(factor_case[2]))
         factor_list.append(factor)
     filter_stock_list = []
     if ts_code == '':
@@ -311,8 +309,11 @@ def run_combination_factor_ret_distribution_analysis(combination_id, filters='',
     for factor in factor_list:
         param = ''
         for factor_case in factor_case_list:
-            if factor_case[1] == factor.__class__.__name__:
-                cur_factor_index_list = data[data[factor.get_signal(int(factor_case[8]))] == 1].index
+            if factor_case[2] == factor.__class__.__name__:
+                if factor_case[8] == '':
+                    cur_factor_index_list = data[data[factor.get_signal()] == 1].index
+                else:
+                    cur_factor_index_list = data[data[factor.get_signal(int(factor_case[8]))] == 1].index
                 action_index_list = action_index_list + cur_factor_index_list.to_list()
     action_index_set = set(action_index_list)
     action_index_list = list(action_index_set)
@@ -364,6 +365,7 @@ if __name__ == '__main__':
     # run_factor_analysis('factor.momentum_factor', 'MomentumRegression_v1.0_20___', '')
     # run_factor_analysis('factor.momentum_factor', 'DiscreteIndex_v1.0_10|40___', '')
     # run_factor_analysis('factor.momentum_factor', 'MACDPenetration_v1.0_12|16|9___', '')
+    run_factor_analysis('factor.my_factor', 'RSIGoldenCross_v1.0_7|14___', '')
     # 因子收益率分布分析
     # run_factor_ret_distribution_analysis('factor.my_factor', 'RisingTrend_v1.0_5|10_0.8|0.7__', '')
     # run_factor_ret_distribution_analysis('factor.my_factor', 'FallingTrend_v1.0_10|15|20_0.9|0.8|0.7__', '')
@@ -372,9 +374,16 @@ if __name__ == '__main__':
     # run_factor_ret_distribution_analysis('factor.momentum_factor', 'MomentumPenetration_v1.0_20___', '')
     # run_factor_ret_distribution_analysis('factor.momentum_factor', 'MomentumRegression_v1.0_20___', '', '688618.SH')
     # run_factor_ret_distribution_analysis('factor.momentum_factor', 'DiscreteIndex_v1.0_10|40___', '', '')
-    run_factor_ret_distribution_analysis('factor.momentum_factor', 'MACDPenetration_v1.0_12|16|9___', '', '')
+    # run_factor_ret_distribution_analysis('factor.momentum_factor', 'MACDPenetration_v1.0_12|16|9___', '', '')
+    # run_factor_ret_distribution_analysis('factor.momentum_factor', 'RSIRegression_v1.0_14___', '', '')
+    # run_factor_ret_distribution_analysis('factor.momentum_factor', 'DRFRegression_v1.0_0.3___', '', '')
+    # run_factor_ret_distribution_analysis('factor.momentum_factor', 'KDJRegression_v1.0_9___', '', '')
+    # run_factor_ret_distribution_analysis('factor.momentum_factor', 'WRRegression_v1.0_30___', '', '')
+    # run_factor_ret_distribution_analysis('factor.momentum_factor', 'UOPenetration_v1.0_7|14|28__', '', '')
+    # run_factor_ret_distribution_analysis('factor.momentum_factor', 'RVIPenetration_v1.0_10__', '', '')
+    # run_factor_ret_distribution_analysis('factor.momentum_factor', 'SOPenetration_v1.0_10__', '', '')
     # 复合因子收益率分析
-    # run_combination_factor_ret_distribution_analysis('factor_combination1')
+    # run_combination_factor_ret_distribution_analysis('combination1')
     # # 参数调优
     # params = [4, 6, 8, 10, 12, 14, 16, 18, 20 ,22, 24, 26, 28 ,30,32,34,36,38,40]
     # ts_code = 'IF2204'
@@ -383,7 +392,7 @@ if __name__ == '__main__':
     #     run_single_factor_simulation('factor.trend_factor', code, ts_code, False)
         # print(code)
     # 单一因子模拟
-    # run_single_factor_simulation('factor.momentum_factor', 'MACDPenetration_v1.0_12|16|9___')
+    run_single_factor_simulation('factor.momentum_factor', 'RSIRegression_v1.0_14___', ts_code = '601360.SH')
     # 复合因子模拟
     # factor_list = []
     # factor_list.append(MeanPenetration([20]))

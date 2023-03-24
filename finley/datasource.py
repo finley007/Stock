@@ -61,7 +61,9 @@ if __name__ == '__main__':
     # print(datasource.get_stock_list())
     # print(datasource.get_calendar(start_date='20200101', end_date='20211231'))
     # print(datasource.daily_quotes('000001.SZ',start_date='19910101',end_date='20210801'))
-    print(datasource.daily_indicator(trade_date='20210830'))
+    # print(datasource.daily_indicator(trade_date='20210830'))
     # print(datasource.restoration_factor(ts_code = '603882.SH'))
+    data = datasource.reverse_factor('000006.SZ')
+    print(data[data['trade_date'] == '20221128'])
     
     

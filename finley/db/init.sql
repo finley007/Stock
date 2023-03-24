@@ -92,6 +92,7 @@ max_profit_date VARCHAR(30),
 max_loss_date VARCHAR(30),
 profit DECIMAL(10,2),
 profit_rate DECIMAL(10,2),
+param VARCHAR(8),
 version VARCHAR(10),
 type VARCHAR(10),
 created_date DATETIME not null default NOW(),
@@ -296,22 +297,22 @@ CREATE TABLE IF NOT EXISTS distribution_result
 id VARCHAR(32),
 type int comment '0-因子分布，1-因子收益分布',
 related_id  VARCHAR(32),
-max  DECIMAL(10,5),
-min  DECIMAL(10,5),
-scope DECIMAL(10,5),
-mean DECIMAL(10,5),
-median DECIMAL(10,5),
-std DECIMAL(10,5),
-var DECIMAL(10,5),
-ptile10 DECIMAL(10,5),
-ptile20 DECIMAL(10,5),
-ptile30 DECIMAL(10,5),
-ptile40 DECIMAL(10,5),
-ptile50 DECIMAL(10,5),
-ptile60 DECIMAL(10,5),
-ptile70 DECIMAL(10,5),
-ptile80 DECIMAL(10,5),
-ptile90 DECIMAL(10,5),
+max  DECIMAL(15,5),
+min  DECIMAL(15,5),
+scope DECIMAL(15,5),
+mean DECIMAL(15,5),
+median DECIMAL(15,5),
+std DECIMAL(15,5),
+var DECIMAL(15,5),
+ptile10 DECIMAL(15,5),
+ptile20 DECIMAL(15,5),
+ptile30 DECIMAL(15,5),
+ptile40 DECIMAL(15,5),
+ptile50 DECIMAL(15,5),
+ptile60 DECIMAL(15,5),
+ptile70 DECIMAL(15,5),
+ptile80 DECIMAL(15,5),
+ptile90 DECIMAL(15,5),
 file_path VARCHAR(128),
 created_time datetime,
 modified_time datetime,
@@ -368,8 +369,14 @@ param VARCHAR(10),
 PRIMARY KEY(id)
 );
 
-insert into factor_case values ('MeanInflectionPoint_5__v1.0_20210101_20210929','MeanInflectionPoint','v1.0','5','','20210101','20210929');
-insert into factor_case values ('RisingTrend_v1.0_5|10_0.8|0.7__','RisingTrend','v1.0','5|10','0.8|0.7','','');
+insert into factor_case values ('MeanInflectionPoint_5__v1.0_20210101_20210929','factor.trend_factor','MeanInflectionPoint','v1.0','5','','20210101','20210929');
+insert into factor_case values ('RisingTrend_v1.0_5|10_0.8|0.7__','factor.my_factor','RisingTrend','v1.0','5|10','0.8|0.7','','');
+insert into factor_case values ('MACDPenetration_v1.0_12|16|9___','factor.momentum_factor','MACDPenetration','v1.0','12|16|9','','','');
+insert into factor_case values ('RSIRegression_v1.0_14___','factor.momentum_factor','RSIRegression','v1.0','14','','','');
+
+insert into factor_combination values ('combination1','MACDPenetration|RSIRegression');
+insert into factor_combination_mapping values ('aa','combination1','MACDPenetration_v1.0_12|16|9___','');
+insert into factor_combination_mapping values ('bb','combination1','RSIRegression_v1.0_14___','14');
 
 insert into learning_model values ('1', '{"training_set":[{"ts_code":"000858.SZ","start_date":"20190701","end_date":"20200310"}],"profit_period":"5","pre_process":[],"algorithm":"LinearRegression"}', '震荡行情');
 insert into learning_model values ('2', '{"training_set":[{"ts_code":"000858.SZ","start_date":"20200325","end_date":"20210105"}],"profit_period":"5","pre_process":[],"algorithm":"LinearRegression"}', '攀升行情');

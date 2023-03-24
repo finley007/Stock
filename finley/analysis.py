@@ -16,7 +16,7 @@ from visualization import draw_histogram
 from filter import PriceFilter, STFilter, PERatioFilter, NewStockFilter, create_filter_list, filter_stock
 from factor.base_factor import Factor
 from factor.trend_factor import MeanTrend, EnvelopePenetration_Keltner, AdvanceEnvelopePenetration_Keltner, MeanPenetration, MeanInflectionPoint
-from factor.momentum_factor import KDJRegression, RSIPenetration, DRFPenetration, WRRegression, UOPenetration
+from factor.momentum_factor import KDJRegression, RSIRegression, DRFRegression, WRRegression, UOPenetration
 from factor.volume_factor import FIPenetration, MFIPenetration
 from machinelearning import MachineLearn, CompoundFactor, TrainingModel
 from simulator import Action

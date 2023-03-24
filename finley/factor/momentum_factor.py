@@ -137,10 +137,10 @@ class MACDPenetration(CombinedParamFactor):
         else:
             return 0  
         
-# RSI突破
-class RSIPenetration(Factor):
+# RSI回归
+class RSIRegression(Factor):
     
-    factor_code = 'rsi_penetration'
+    factor_code = 'rsi_regression'
     version = '1.0'
         
     _high_limit = 70
@@ -149,24 +149,31 @@ class RSIPenetration(Factor):
     def __init__(self, params):
         self._params = params
     
-    def caculate(self, data):
-        indicator = RSI([self._params[0]])
+    def caculate(self, data, create_signal = True):
+        indicator = RSI(self._params)
         data = indicator.enrich(data)
-        #只取穿透点
-        data[RSIPenetration.factor_code] = 0
-        #突破下限买入
-        data.loc[(data['rsi.' + str(self._params[0])].shift(1) > self._low_limit) & (data['rsi.' + str(self._params[0])] < self._low_limit), RSIPenetration.factor_code] = 1
-        #突破上限卖出
-        data.loc[(data['rsi.' + str(self._params[0])].shift(1) < self._high_limit) & (data['rsi.' + str(self._params[0])] > self._high_limit), RSIPenetration.factor_code] = -1
+        for param in self._params: 
+            data[self.get_key(param)] = data[indicator.get_key(param)]
+            if create_signal:
+                data[self.get_signal(param)] = data[[self.get_key(param)]].rolling(2).apply(lambda item: self.get_action_mapping(param, item))
         return data 
     
+    def get_action_mapping(self, param, item):
+        key_list = item.tolist()
+        if key_list[0] > self._low_limit and key_list[1] < self._low_limit:
+            return 1
+        elif key_list[0] < self._high_limit and key_list[1] > self._high_limit:
+            return -1
+        else:
+            return 0 
+            
     def obtain_visual_monitoring_parameters(self):
         return [factor.get_factor_code()]
     
-# DRF突破
-class DRFPenetration(Factor):
+# DRF回归
+class DRFRegression(Factor):
     
-    factor_code = 'drf_penetration'
+    factor_code = 'drf_regression'
     version = '1.0'
     
     _high_limit = 0.7
@@ -175,16 +182,23 @@ class DRFPenetration(Factor):
     def __init__(self, params):
         self._params = params
     
-    def caculate(self, data):
-        indicator = DRF([self._params[0]])
+    def caculate(self, data, create_signal=True):
+        indicator = DRF(self._params)
         data = indicator.enrich(data)
-        #只取穿透点
-        data[DRFPenetration.factor_code] = 0
-        #突破下限买入
-        data.loc[(data['DRF.' + str(self._params[0])].shift(1) > self._low_limit) & (data['DRF.' + str(self._params[0])] < self._low_limit), DRFPenetration.factor_code] = 1
-        #突破上限卖出
-        data.loc[(data['DRF.' + str(self._params[0])].shift(1) < self._high_limit) & (data['DRF.' + str(self._params[0])] > self._high_limit), DRFPenetration.factor_code] = -1
+        for param in self._params: 
+            data[self.get_key(param)] = data[indicator.get_key(param)]
+            if create_signal:
+                data[self.get_signal(param)] = data[[self.get_key(param)]].rolling(2).apply(lambda item: self.get_action_mapping(param, item))
         return data 
+
+    def get_action_mapping(self, param, item):
+        key_list = item.tolist()
+        if key_list[0] > self._low_limit and key_list[1] < self._low_limit:
+            return 1
+        elif key_list[0] < self._high_limit and key_list[1] > self._high_limit:
+            return -1
+        else:
+            return 0 
     
 # KDJ回归
 class KDJRegression(Factor):
@@ -198,19 +212,26 @@ class KDJRegression(Factor):
     def __init__(self, params):
         self._params = params
     
-    def caculate(self, data):
-        indicator = KDJ([self._params[0]])
+    def caculate(self, data, create_signal=True):
+        indicator = KDJ(self._params)
         data = indicator.enrich(data)
-        #只取穿透点
-        data[KDJRegression.factor_code] = 0
-        #突破下限买入
-        data.loc[(data['D.' + str(self._params[0])].shift(1) > self._low_limit) & (data['D.' + str(self._params[0])] < self._low_limit), KDJRegression.factor_code] = 1
-        #突破上限卖出
-        data.loc[(data['D.' + str(self._params[0])].shift(1) < self._high_limit) & (data['D.' + str(self._params[0])] > self._high_limit), KDJRegression.factor_code] = -1
+        for param in self._params: 
+            data[self.get_key(param)] = data[indicator.get_d(param)]
+            if create_signal:
+                data[self.get_signal(param)] = data[[self.get_key(param)]].rolling(2).apply(lambda item: self.get_action_mapping(param, item))
         return data 
     
     def obtain_visual_monitoring_parameters(self):
         return [factor.get_factor_code()]
+
+    def get_action_mapping(self, param, item):
+        key_list = item.tolist()
+        if key_list[0] > self._low_limit and key_list[1] < self._low_limit:
+            return 1
+        elif key_list[0] < self._high_limit and key_list[1] > self._high_limit:
+            return -1
+        else:
+            return 0 
     
 # WR回归
 class WRRegression(Factor):
@@ -224,45 +245,58 @@ class WRRegression(Factor):
     def __init__(self, params):
         self._params = params
     
-    def caculate(self, data):
-        indicator = WR([self._params[0]])
+    def caculate(self, data, create_signal=True):
+        indicator = WR(self._params)
         data = indicator.enrich(data)
-        #只取穿透点
-        data[WRRegression.factor_code] = 0
-        #突破下限买入
-        data.loc[(data['WR.' + str(self._params[0])].shift(1) > self._low_limit) & (data['WR.' + str(self._params[0])] < self._low_limit), WRRegression.factor_code] = -100
-        #突破上限卖出
-        data.loc[(data['WR.' + str(self._params[0])].shift(1) < self._high_limit) & (data['WR.' + str(self._params[0])] > self._high_limit), WRRegression.factor_code] = 100
+        for param in self._params: 
+            data[self.get_key(param)] = data[indicator.get_key(param)]
+            if create_signal:
+                data[self.get_signal(param)] = data[[self.get_key(param)]].rolling(2).apply(lambda item: self.get_action_mapping(param, item))
         return data 
+
+    def get_action_mapping(self, param, item):
+        key_list = item.tolist()
+        if key_list[0] > self._low_limit and key_list[1] < self._low_limit:
+            return 1
+        elif key_list[0] < self._high_limit and key_list[1] > self._high_limit:
+            return -1
+        else:
+            return 0 
     
 # UO突破
-class UOPenetration(Factor):
+class UOPenetration(CombinedParamFactor):
     
     factor_code = 'uo_penetration'
     version = '1.0'
         
-    _high_limit = 65
-    _high_limit1 = 70
-    _low_limit = 35
-    _low_limit1 = 50
+    _1st_high_limit = 65
+    _2nd_high_limit = 70
+    _2nd_low_limit = 35
+    _1st_low_limit = 50
     
     def __init__(self, params):
         self._params = params
     
-    def caculate(self, data):
+    def caculate(self, data, create_signal=True):
         indicator = UO(self._params)
         data = indicator.enrich(data)
-        #只取穿透点
-        data[UOPenetration.factor_code] = 0
-        #向上突破65买入
-        data.loc[(data['UO'].shift(1) < self._high_limit) & (data['UO'] > self._high_limit), UOPenetration.factor_code] = 100
-        #向下回调70卖出
-        data.loc[(data['UO'].shift(1) > self._high_limit1) & (data['UO'] < self._high_limit1), UOPenetration.factor_code] = -100
-        #向下突破35并回调到35买入
-        data.loc[(data['UO'].shift(1) < self._low_limit) & (data['UO'] > self._low_limit), UOPenetration.factor_code] = 100
-        #向下突破50卖出
-        data.loc[(data['UO'].shift(1) > self._low_limit1) & (data['UO'] < self._low_limit1), UOPenetration.factor_code] = -100
+        data[self.get_key()] = data[indicator.get_key()]
+        if create_signal:
+            data[self.get_signal()] = data[[self.get_key()]].rolling(2).apply(lambda item: self.get_action_mapping(item))
         return data 
+
+    def get_action_mapping(self, item):
+        key_list = item.tolist()
+        if key_list[0] < self._1st_high_limit and key_list[1] > self._1st_high_limit:
+            return 1
+        elif key_list[0] > self._2nd_high_limit and key_list[1] < self._2nd_high_limit:
+            return -1
+        elif key_list[0] < self._2nd_low_limit and key_list[1] > self._2nd_low_limit:
+            return 1
+        elif key_list[0] > self._1st_low_limit and key_list[1] < self._1st_low_limit:
+            return -1
+        else:
+            return 0 
     
 # RVI突破
 class RVIPenetration(Factor):
@@ -273,16 +307,23 @@ class RVIPenetration(Factor):
     def __init__(self, params):
         self._params = params
     
-    def caculate(self, data):
+    def caculate(self, data, create_signal=True):
         indicator = RVI(self._params)
         data = indicator.enrich(data)
-        #只取穿透点
-        data[RVIPenetration.factor_code] = 0
-        #向上突破标记线买入
-        data.loc[(data['RVI.'+str(self._params[0])].shift(1) < data['RVIS.'+str(self._params[0])].shift(1)) & (data['RVI.'+str(self._params[0])] > data['RVIS.'+str(self._params[0])]), RVIPenetration.factor_code] = 100
-        #向下突破标记线卖出
-        data.loc[(data['RVI.'+str(self._params[0])].shift(1) > data['RVIS.'+str(self._params[0])].shift(1)) & (data['RVI.'+str(self._params[0])] < data['RVIS.'+str(self._params[0])]), RVIPenetration.factor_code] = -100
-        return data 
+        for param in self._params:
+            data[self.get_key(param)] = data[indicator.get_key(param)] - data[indicator.get_rvis(param)]
+            if create_signal:
+                data[self.get_signal(param)] = data[[self.get_key(param)]].rolling(2).apply(lambda item: self.get_action_mapping(param, item))
+        return data
+
+    def get_action_mapping(self, param, item):
+        key_list = item.tolist()
+        if key_list[0] < 0 and key_list[1] > 0:
+            return 1
+        elif key_list[0] > 0 and key_list[1] < 0:
+            return -1
+        else:
+            return 0 
     
 # SO突破
 class SOPenetration(Factor):
@@ -295,24 +336,31 @@ class SOPenetration(Factor):
     def __init__(self, params):
         self._params = params
     
-    def caculate(self, data):
+    def caculate(self, data, create_signal=True):
         indicator = SO(self._params)
         data = indicator.enrich(data)
-        #只取穿透点
-        data[SOPenetration.factor_code] = 0
-        #向上突破标记线买入
-        data.loc[(data['SO.'+str(self._params[0])].shift(1) < self._high_limit) & (data['SO.'+str(self._params[0])] > self._high_limit), SOPenetration.factor_code] = 100
-        #向下突破标记线卖出
-        data.loc[(data['SO.'+str(self._params[0])].shift(1) > self._high_limit) & (data['SO.'+str(self._params[0])] < self._high_limit), SOPenetration.factor_code] = -100
-        return data 
+        for param in self._params:
+            data[self.get_key(param)] = data[indicator.get_key(param)]
+            if create_signal:
+                data[self.get_signal(param)] = data[[self.get_key(param)]].rolling(2).apply(lambda item: self.get_action_mapping(param, item))
+        return data
+
+    def get_action_mapping(self, param, item):
+        key_list = item.tolist()
+        if key_list[0] < self._high_limit and key_list[1] > self._high_limit:
+            return 1
+        elif key_list[0] > self._high_limit and key_list[1] < self._high_limit:
+            return -1
+        else:
+            return 0 
      
 if __name__ == '__main__':
     #图像分析
-    data = FileUtils.get_file_by_ts_code('688819.SH', is_reversion = True)
+    # data = FileUtils.get_file_by_ts_code('688819.SH', is_reversion = True)
     # # factor = MACDPenetration([])
     # factor = MomentumPenetration([20])
     # factor = MomentumRegression([20])
-    factor = DiscreteIndex([10, 40])
+    # factor = DiscreteIndex([10, 40])
     # factor = KDJRegression([9])
     # factor = DRFPenetration([0.3])
     # factor = WRRegression([30])
@@ -320,10 +368,10 @@ if __name__ == '__main__':
     # factor = RVIPenetration([10])
     # data = factor.caculate(data)
     # factor = SOPenetration([10])
-    data = factor.caculate(data)
-    data['index_trade_date'] = pd.to_datetime(data['trade_date'])
-    data = data.set_index(['index_trade_date'])
-    draw_analysis_curve(data[(data['trade_date'] <= '20220125') & (data['trade_date'] > '20210101')], volume = False, show_signal = True, signal_keys = [factor.get_key()])
+    # data = factor.caculate(data)
+    # data['index_trade_date'] = pd.to_datetime(data['trade_date'])
+    # data = data.set_index(['index_trade_date'])
+    # draw_analysis_curve(data[(data['trade_date'] <= '20220125') & (data['trade_date'] > '20210101')], volume = False, show_signal = True, signal_keys = [factor.get_key()])
     print('aa')
     # print(factor.score(data))
     

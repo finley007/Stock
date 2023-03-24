@@ -141,11 +141,11 @@ if __name__ == '__main__':
     # synchronize_calendar()
     # synchronize_all_stock()
     # 不复权
-    # synchronize_all_stock_daily_data()
+    synchronize_all_stock_daily_data()
     # 复权
-    # synchronize_all_stock_daily_data(is_reversion = True)
+    synchronize_all_stock_daily_data(is_reversion = True)
     # 手动同步
-    data = synchronize_stock_daily_data('000001.SZ', is_reversion = True)
+    # data = synchronize_stock_daily_data('000001.SZ', is_reversion = True)
     # FileUtils.save_file_by_ts_code(data, '002001.SZ', is_reversion = True)
     # 手动增量同步
     # data = incremental_synchronize_stock_daily_data('002304.SZ', is_reversion = True)

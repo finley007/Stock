@@ -553,6 +553,8 @@ class DIEnvelope(Envelope):
     
 # RSI
 class RSI(Indicator):
+
+    key = 'rsi'
     
     def __init__(self, params):
         self._params = params
@@ -563,38 +565,56 @@ class RSI(Indicator):
         data['change'] = data['close'] - data['close'].shift(1)
         data.loc[data['change'] > 0, 'increase'] = data['change']
         data.loc[data['change'] < 0, 'decrease'] = -data['change']
-        data['au'] = data['increase'].rolling(self._params[0]).sum()
-        data['ad'] = data['decrease'].rolling(self._params[0]).sum()
-        data['rsi.' + str(self._params[0])] = 100 - (100 / (1 + data['au']/data['ad']))
+        for param in self._params:
+            data['au'+str(param)] = data['increase'].rolling(param).sum()
+            data['ad'+str(param)] = data['decrease'].rolling(param).sum()
+            data[self.get_key(param)] = 100 - (100 / (1 + data['au'+str(param)]/data['ad'+str(param)]))
         return data
     
 # RSV
 class RSV(Indicator):
     
+    key = 'rsv'
+
     def __init__(self, params):
         self._params = params
         
     def enrich(self, data):
-        data['rsv.'+str(self._params[0])] = 100 * (data['close'] - data['close'].rolling(self._params[0]).min())/(data['close'].rolling(self._params[0]).max() - data['close'].rolling(self._params[0]).min())
+        for param in self._params:
+            data[self.get_key(param)] = 100 * (data['close'] - data['close'].rolling(param).min())/(data['close'].rolling(param).max() - data['close'].rolling(param).min())
         return data
     
 # KDJ
 class KDJ(Indicator):
     
+    key = 'kdj'
+
     def __init__(self, params):
         self._params = params
         
     def enrich(self, data):
         rsv = RSV(self._params)
         data = rsv.enrich(data)
-        data['K.'+str(self._params[0])] = data['rsv.'+str(self._params[0])].ewm(alpha=1/3, adjust=False).mean()
-        data['D.'+str(self._params[0])] = data['K.'+str(self._params[0])].ewm(alpha=1/3, adjust=False).mean()
-        data['J.'+str(self._params[0])] = 3*data['D.'+str(self._params[0])] + 2*data['K.'+str(self._params[0])]
+        for param in self._params:
+            data[self.get_k(param)] = data[rsv.get_key(param)].ewm(alpha=1/3, adjust=False).mean()
+            data[self.get_d(param)] = data[self.get_k(param)].ewm(alpha=1/3, adjust=False).mean()
+            data[self.get_j(param)] = 3*data[self.get_d(param)] + 2*data[self.get_k(param)]
         return data
+
+    def get_k(self, param):
+        return 'K.'+str(param)
+
+    def get_d(self, param):
+        return 'D.'+str(param)
+
+    def get_j(self, param):
+        return 'J.'+str(param)
     
 #DRF
 class DRF(Indicator):
     
+    key = 'drf'
+
     def __init__(self, params):
         self._params = params
         
@@ -602,41 +622,66 @@ class DRF(Indicator):
         data['BP'] = data['high'] - data['open']
         data['SP'] = data['close'] - data['low']
         data['DRF'] = (data['BP'] + data['SP'])/(2*(data['high'] - data['low'])) 
-        data['DRF.' + str(self._params[0])] = data['DRF'].ewm(alpha=self._params[0], adjust = False).mean()
+        for param in self._params:
+            data[self.get_key(param)] = data['DRF'].ewm(alpha=param, adjust = False).mean()
         return data
     
 #WR
 class WR(Indicator):
+
+    key = 'wr'
     
     def __init__(self, params):
         self._params = params
         
     def enrich(self, data):
-        data['high.'+str(self._params[0])] = data['high'].rolling(self._params[0]).max()
-        data['low.'+str(self._params[0])] = data['low'].rolling(self._params[0]).min()
-        data['WR'] = 100*(data['high.'+str(self._params[0])] - data['close'])/(data['high.'+str(self._params[0])] - data['low.'+str(self._params[0])]) 
+        for param in self._params:
+            data['high.'+str(param)] = data['high'].rolling(param).max()
+            data['low.'+str(param)] = data['low'].rolling(param).min()
+            data[self.get_key(param)] = 100*(data['high.'+str(param)] - data['close'])/(data['high.'+str(param)] - data['low.'+str(param)]) 
         return data
     
 #UO   
 class UO(Indicator):
+    """
+    终极波动指标
+    https://baike.baidu.com/item/%E7%BB%88%E6%9E%81%E6%B3%A2%E5%8A%A8%E6%8C%87%E6%A0%87/1982936
+    """
     
+    key = 'uo'
+
+    _1st_period = 7
+    _2nd_period = 14
+    _3rd_period = 28
+
     def __init__(self, params):
         self._params = params
+
+    def __init__(self, params=[]):
+        if (len(params) >= 3):
+            self._1st_period = params[0]
+            self._2nd_period = params[1]
+            self._3rd_period = params[2]
+            
+    def get_key(self):
+        return self.key + '.' + str(self._1st_period) + '.' + str(self._2nd_period) + '.' + str(self._3rd_period)
         
     def enrich(self, data):
         data['last_close'] = data['close'].shift(1)
         data['TL'] = data.apply(lambda x : min(x['last_close'], x['low']), axis=1)
         data['BP'] = data['close'] - data['TL']
         data['TR'] = data.apply(lambda x : max(x['last_close'], x['high']), axis=1) - data['TL']
-        data['avg.'+str(self._params[0])] = data['BP'].rolling(self._params[0]).sum()/data['TR'].rolling(self._params[0]).sum()
-        data['avg.'+str(self._params[1])] = data['BP'].rolling(self._params[1]).sum()/data['TR'].rolling(self._params[1]).sum()
-        data['avg.'+str(self._params[2])] = data['BP'].rolling(self._params[2]).sum()/data['TR'].rolling(self._params[2]).sum()
-        data['UO'] = 100*(4*data['avg.'+str(self._params[0])]+2*data['avg.'+str(self._params[1])]+data['avg.'+str(self._params[1])])/7
+        data['avg.'+str(self._1st_period)] = data['BP'].rolling(self._1st_period).sum()/data['TR'].rolling(self._1st_period).sum()
+        data['avg.'+str(self._2nd_period)] = data['BP'].rolling(self._2nd_period).sum()/data['TR'].rolling(self._2nd_period).sum()
+        data['avg.'+str(self._3rd_period)] = data['BP'].rolling(self._3rd_period).sum()/data['TR'].rolling(self._3rd_period).sum()
+        data[self.get_key()] = 100*(4*data['avg.'+str(self._1st_period)]+2*data['avg.'+str(self._2nd_period)]+data['avg.'+str(self._3rd_period)])/7
         return data
     
 #RVI
 class RVI(Indicator):
     
+    key = 'rvi'
+
     def __init__(self, params):
         self._params = params
         
@@ -645,11 +690,15 @@ class RVI(Indicator):
         data['HL'] = data['high'] - data['low']
         data['V1'] = (data['CO'] + 2*data['CO'].shift(1) + 2*data['CO'].shift(2)+ data['CO'].shift(3))/6
         data['V2'] = (data['HL'] + 2*data['HL'].shift(1) + 2*data['HL'].shift(2)+ data['HL'].shift(3))/6
-        data['S1'] = data['V1'].rolling(self._params[0]).sum()
-        data['S2'] = data['V2'].rolling(self._params[0]).sum()
-        data['RVI.'+str(self._params[0])] = data['S1']/data['S2']
-        data['RVIS.'+str(self._params[0])] = (data['RVI.'+str(self._params[0])] + 2*data['RVI.'+str(self._params[0])].shift(1) + 2*data['RVI.'+str(self._params[0])].shift(2)+ data['RVI.'+str(self._params[0])].shift(3))/6
+        for param in self._params:
+            data['S1'] = data['V1'].rolling(param).sum()
+            data['S2'] = data['V2'].rolling(param).sum()
+            data[self.get_key(param)] = data['S1']/data['S2']
+            data[self.get_rvis(param)] = (data[self.get_key(param)] + 2*data[self.get_key(param)].shift(1) + 2*data[self.get_key(param)].shift(2)+ data[self.get_key(param)].shift(3))/6
         return data 
+
+    def get_rvis(self, param):
+        return 'rvis.'+str(param)
     
 #TSI
 class TSI(Indicator):
@@ -668,17 +717,19 @@ class TSI(Indicator):
 #SO Strength Oscillator
 class SO(Indicator):
     
+    key = 'so'
+
     def __init__(self, params):
         self._params = params
         
     def enrich(self, data):
         data['delta'] = (data['close'] - data['close'].shift(1))
-        data['delta_mean'] = data['delta'].rolling(self._params[0]).mean()
         data['amp'] = (data['high'] - data['low'])
-        data['amp_mean'] = data['amp'].rolling(self._params[0]).mean()
-        data['SO.'+str(self._params[0])] = data['delta_mean']/data['amp_mean']
+        for param in self._params:
+            data['delta_mean.' + str(param)] = data['delta'].rolling(param).mean()
+            data['amp_mean.' + str(param)] = data['amp'].rolling(param).mean()
+            data[self.get_key(param)] = data['delta_mean.' + str(param)]/data['amp_mean.' + str(param)]
         return data 
-    
     
 #ADX
 class ADX(Indicator):
@@ -787,12 +838,12 @@ class PVT(Indicator):
         
   
 if __name__ == '__main__':
-    data = FileUtils.get_file_by_ts_code('600438.SH', True)
+    # data = FileUtils.get_file_by_ts_code('600438.SH', True)
     # data = FileUtils.get_file_by_product_and_instrument('C', 'C1105')
     # data = data.iloc[::-1]
     # indicator = MovingAverage([20])
     # data = indicator.enrich(data)
-    indicator1 = ExpMovingAverage([20])
+    # indicator1 = ExpMovingAverage([20])
     # data = indicator.enrich(data)
     # indicator = StandardDeviation([5])
     # data = indicator.enrich(data)
@@ -840,11 +891,11 @@ if __name__ == '__main__':
     # data = indicator.enrich(data)
     # indicator = PVT([])
     # data = indicator.enrich(data)
-    indicator = FirstDiff([13], indicator1)
-    data = indicator.enrich(data)
-    data['index_trade_date'] = pd.to_datetime(data['trade_date'])
-    data = data.set_index(['index_trade_date'])
-    data['volume'] = data['vol']
-    draw_analysis_curve(data[data['trade_date'] > '20220101'], volume = True, show_signal = True, signal_keys = ['mean.20','first_diff.mean.13'])
+    # indicator = FirstDiff([13], indicator1)
+    # data = indicator.enrich(data)
+    # data['index_trade_date'] = pd.to_datetime(data['trade_date'])
+    # data = data.set_index(['index_trade_date'])
+    # data['volume'] = data['vol']
+    # draw_analysis_curve(data[data['trade_date'] > '20220101'], volume = True, show_signal = True, signal_keys = ['mean.20','first_diff.mean.13'])
     # draw_analysis_curve(data, volume = True, show_signal = False, signal_keys = ['mean.5'])
     print("aa")

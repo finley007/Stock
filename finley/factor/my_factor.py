@@ -8,9 +8,10 @@ parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0,parentdir)  
 from visualization import draw_analysis_curve
 from persistence import DaoMysqlImpl, FileUtils
-from factor.base_factor import Factor
+from factor.base_factor import Factor, CombinedParamFactor
 import numpy as np
 from visualization import draw_histogram
+from indicator import RSI
 
 '''
 过去n天上涨比例因子
@@ -127,6 +128,33 @@ class LowerHatch(Factor):
         else:
             return 0
         
+'''
+RSI 金叉
+'''
+class RSIGoldenCross(CombinedParamFactor):
+
+    factor_code = 'rsi_golden_cross'
+    version = '1.0'
+        
+    def __init__(self, params):
+        self._params = params
+
+    def caculate(self, data, create_signal = True):
+        indicator = RSI(self._params)
+        data = indicator.enrich(data)
+        data[self.get_key()] = data[indicator.get_key(self._params[0])] - data[indicator.get_key(self._params[1])]
+        if create_signal:
+            data[self.get_signal()] = data[[self.get_key()]].rolling(2).apply(lambda item: self.get_action_mapping(item))
+        return data
+    
+    def get_action_mapping(self, item):
+        key_list = item.tolist()
+        if key_list[0] < 0 and key_list[1] > 1:
+            return 1
+        elif key_list[0] > 0 and key_list[1] < 1:
+            return -1
+        else:
+            return 0 
         
         
 if __name__ == '__main__':

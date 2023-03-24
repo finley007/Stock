@@ -14,6 +14,7 @@ import os
 import shutil
 from glob import glob
 import uuid
+from functools import lru_cache
 
 import constants
 import json
@@ -107,6 +108,10 @@ class Dao(metaclass = ABCMeta):
     @abstractclassmethod
     def get_next_business_date(self, current_date):
         pass
+
+    @abstractclassmethod
+    def get_next_n_business_date(self, current_date, n):
+        pass
     
     @abstractclassmethod
     def get_learning_model(self, model_id):
@@ -176,6 +181,14 @@ class DaoMysqlImpl(Dao):
     def get_next_business_date(self, current_date):
         result = self.select('select min(cal_date) from static_calendar where cal_date > ' + current_date + ' and is_open = 1')
         return result[0][0]
+
+    @lru_cache(maxsize=1000)
+    def get_next_n_business_date(self, current_date, n):
+        result = self.select('select cal_date from static_calendar where cal_date > ' + current_date + ' and is_open = 1 order by cal_date')
+        if len(result) >= n: 
+            return result[n-1][0]
+        else:
+            return ''
     
     def get_learning_model(self, model_id):
         result = self.select('select model from learning_model where id = ' + str(model_id))
@@ -299,22 +312,22 @@ class DistributionResult(Base):
     id = Column(String(32), primary_key=True)
     type = Column(Integer)
     related_id = Column(String(10))
-    max = Column(DECIMAL(10, 5))
-    min = Column(DECIMAL(10, 5))
-    scope = Column(DECIMAL(10, 5))
-    mean = Column(DECIMAL(10, 5))
-    median = Column(DECIMAL(10, 5))
-    std = Column(DECIMAL(10, 5))
-    var = Column(DECIMAL(10, 5))
-    ptile10 = Column(DECIMAL(10, 5))
-    ptile20 = Column(DECIMAL(10, 5))
-    ptile30 = Column(DECIMAL(10, 5))
-    ptile40 = Column(DECIMAL(10, 5))
-    ptile50 = Column(DECIMAL(10, 5))
-    ptile60 = Column(DECIMAL(10, 5))
-    ptile70 = Column(DECIMAL(10, 5))
-    ptile80 = Column(DECIMAL(10, 5))
-    ptile90 = Column(DECIMAL(10, 5))
+    max = Column(DECIMAL(15, 5))
+    min = Column(DECIMAL(15, 5))
+    scope = Column(DECIMAL(15, 5))
+    mean = Column(DECIMAL(15, 5))
+    median = Column(DECIMAL(15, 5))
+    std = Column(DECIMAL(15, 5))
+    var = Column(DECIMAL(15, 5))
+    ptile10 = Column(DECIMAL(15, 5))
+    ptile20 = Column(DECIMAL(15, 5))
+    ptile30 = Column(DECIMAL(15, 5))
+    ptile40 = Column(DECIMAL(15, 5))
+    ptile50 = Column(DECIMAL(15, 5))
+    ptile60 = Column(DECIMAL(15, 5))
+    ptile70 = Column(DECIMAL(15, 5))
+    ptile80 = Column(DECIMAL(15, 5))
+    ptile90 = Column(DECIMAL(15, 5))
     file_path = Column(String(128))
     created_time = Column(DateTime)
     modified_time = Column(DateTime)
