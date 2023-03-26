@@ -166,7 +166,7 @@ class ClosingStrategy(metaclass = ABCMeta):
     _dao = DaoMysqlImpl()
     
     @abstractclassmethod
-    def close(self, data, factor, action):
+    def close(self, data, factor, action, param):
         pass
 
 class FixTimeClosingStragegy(ClosingStrategy):
@@ -177,8 +177,41 @@ class FixTimeClosingStragegy(ClosingStrategy):
     def __init__(self, hold_time):
         self._hold_time = hold_time
 
-    def close(self, data, factor, action):
+    def close(self, data, factor, action, param):
         open_date = action.get_open_date()
+        i = 0
+        close_price = []
+        while len(close_price) == 0:
+            close_date = self._dao.get_next_n_business_date(open_date, self._hold_time + i)
+            if close_date != '':
+                close_price = data[data['trade_date'] == close_date]['close']
+                i = i + 1
+            else:
+                return None
+        action.set_close_date(close_date, data)
+        action.set_close_price(close_price)
+        return action
+    
+class SignalClosingStragegy(ClosingStrategy):
+    """
+    信号平仓
+    """
+
+
+    def close(self, data, factor, action, param):
+        open_date = action.get_open_date()
+        if param == '':
+            sell_action_list = data[data[factor.get_signal()] == 1]
+        else:
+            sell_action_list = data[data[factor.get_signal(param)] == 1]
+        for action in sell_action_list.iterrows():
+            signal_date = action[1]['trade_date']
+            action_date = self.get_action_date(data, factor, signal_date)
+            try:
+                action_records.append(LongAction(trade_date, data[data['trade_date'] == trade_date]['open'].iloc[0], data))
+            except Exception as e:
+                print('Stock{0} did not transaction on {1}'.format(data['ts_code'][0], trade_date))
+                continue
         i = 0
         close_price = []
         while len(close_price) == 0:
@@ -200,7 +233,7 @@ class SimulationConfig():
     #反向开仓
     _reverse_open = False
     #平仓策略
-    _closing_stratege = FixTimeClosingStragegy(10)
+    _closing_stratege = FixTimeClosingStragegy(3)
     #重复开仓
     _repeat_opening = False
     
@@ -243,7 +276,7 @@ class Simulator(metaclass = ABCMeta):
         start_date = filter_data[1]
         end_date = filter_data[2]
         #仿真
-        if len(factor.get_params()) > 0:
+        if isinstance(factor.get_params(), list):
             for param in factor.get_params():
                 action_records = self.execute_simulate(data, factor, start_date, end_date, param, config)
                 self.print_simulate_result(factor, data, action_records, start_date, end_date, factor.get_version(), param, save)

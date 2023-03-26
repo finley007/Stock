@@ -3,15 +3,17 @@
 
 import pandas as pd
 
-import os,sys 
+import os,sys
+import numpy as np
+
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) 
 sys.path.insert(0,parentdir)  
 from visualization import draw_analysis_curve
 from persistence import DaoMysqlImpl, FileUtils
 from factor.base_factor import Factor, CombinedParamFactor
-import numpy as np
 from visualization import draw_histogram
 from indicator import RSI
+from simulator import StockSimulator 
 
 '''
 过去n天上涨比例因子
@@ -160,9 +162,9 @@ class RSIGoldenCross(CombinedParamFactor):
 if __name__ == '__main__':
     # 因子分析
     # factor = RisingTrend([5, 10])
-    factor = FallingTrend([10, 15, 20])
-    factor = LowerHatch([10])
-    print(factor.analyze(stock_list=['601318.SH']))
+    # factor = FallingTrend([10, 15, 20])
+    # factor = LowerHatch([10])
+    # print(factor.analyze(stock_list=['601318.SH']))
     
     # 收益分析
     # data = FileUtils.get_file_by_ts_code('000610.SZ', is_reversion = True)
@@ -184,25 +186,24 @@ if __name__ == '__main__':
     # draw_histogram(ret_list, bin_num=100)
     
     #图像分析
-    # data = FileUtils.get_file_by_ts_code('002454.SZ', is_reversion = True)
-    # # factor = LowerHatch([5])
-    # factor = ContinueDecline([9])
-    # data = factor.caculate(data)
-    # data['index_trade_date'] = pd.to_datetime(data['trade_date'])
-    # data = data.set_index(['index_trade_date'])
-    # draw_analysis_curve(data[(data['trade_date'] <= '20211112') & (data['trade_date'] > '20210101')], volume = False, show_signal = True, signal_keys = [factor.get_factor_code()])
-    # print('aa')
-    # print(factor.score(data))
+    data = FileUtils.get_file_by_ts_code('002454.SZ', is_reversion = True)
+    factor = RSIGoldenCross([7,14])
+    data = factor.caculate(data)
+    data['index_trade_date'] = pd.to_datetime(data['trade_date'])
+    data = data.set_index(['index_trade_date'])
+    draw_analysis_curve(data[(data['trade_date'] <= '20230324') & (data['trade_date'] > '20230101')], volume = False, show_signal = True, signal_keys = [factor.get_key(), factor.get_signal()])
+    print('aa')
     
     #模拟
-    # data = FileUtils.get_file_by_ts_code('002454.SZ', is_reversion = False)
+    data = FileUtils.get_file_by_ts_code('002454.SZ', is_reversion = False)
     # # factor = LowerHatch([5])
     # factor = MeanInflectionPoint([20])
     # # # factor = MeanPenetration([20])
     # # # factor = EnvelopePenetration_MeanPercentage([20])
     # # # factor = EnvelopePenetration_ATR([20])
-    # # # factor = MACDPenetration([])
-    # simulate(factor, data, start_date = '20210101', save = False)
+    factor = RSIGoldenCross([7,14])
+    simulator = StockSimulator()
+    simulator.simulate(factor, data, start_date = '20230101', save = False)
     
     #计算两个因子相关性
     # data = FileUtils.get_file_by_ts_code('600256.SH', is_reversion = True)
