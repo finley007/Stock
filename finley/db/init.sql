@@ -373,6 +373,7 @@ insert into factor_case values ('MeanInflectionPoint_5__v1.0_20210101_20210929',
 insert into factor_case values ('RisingTrend_v1.0_5|10_0.8|0.7__','factor.my_factor','RisingTrend','v1.0','5|10','0.8|0.7','','');
 insert into factor_case values ('MACDPenetration_v1.0_12|16|9___','factor.momentum_factor','MACDPenetration','v1.0','12|16|9','','','');
 insert into factor_case values ('RSIRegression_v1.0_14___','factor.momentum_factor','RSIRegression','v1.0','14','','','');
+insert into factor_case values ('RSIGoldenCross_v1.0_7|14__','factor.my_factor','RSIGoldenCross','v1.0','7|14','','','');
 
 insert into factor_combination values ('combination1','MACDPenetration|RSIRegression');
 insert into factor_combination_mapping values ('aa','combination1','MACDPenetration_v1.0_12|16|9___','');
