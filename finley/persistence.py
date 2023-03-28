@@ -470,9 +470,10 @@ if __name__ == '__main__':
     #         if (len(target_files) == 0):
     #             FileUtils.copy_file('/Users/finley/Projects/Stock/origin/' + product + '/' + file.split('/')[7], '/Users/finley/Projects/Stock/data/future/' + product + '/' + file.split('/')[7])
     
-    # dao = DaoMysqlImpl()
+    dao = DaoMysqlImpl()
     # print(dao.get_future_data('rb2210', '2022-04-11 09:00:00', '2022-04-12 09:03:28'))
     # print(dao.get_stock_list())
+    print(dao.get_next_n_business_date('20220203', 10))
     
     # po测试
     # session = create_session()
@@ -489,5 +490,5 @@ if __name__ == '__main__':
     # stock_list = list(map(lambda item : item.ts_code, result))
     # print(stock_list)
     
-    factor_case_dao = FactorCaseDao()
-    print(factor_case_dao.get_factor_case_list_by_combination('factor_combination1'))
+    # factor_case_dao = FactorCaseDao()
+    # print(factor_case_dao.get_factor_case_list_by_combination('factor_combination1'))

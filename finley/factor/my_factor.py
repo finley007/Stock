@@ -13,7 +13,7 @@ from persistence import DaoMysqlImpl, FileUtils
 from factor.base_factor import Factor, CombinedParamFactor
 from visualization import draw_histogram
 from indicator import RSI
-from simulator import SignalClosingStragegy, SimulationConfig, StockSimulator 
+from simulator import SignalClosingStragegy, SimulationConfig, StockSimulator, FixTimeClosingStragegy
 
 '''
 过去n天上涨比例因子
@@ -205,6 +205,7 @@ if __name__ == '__main__':
     simulator = StockSimulator()
     config = SimulationConfig()
     config.set_closing_stratege(SignalClosingStragegy())
+    # config.set_closing_stratege(FixTimeClosingStragegy(3))
     simulator.simulate(factor, data, start_date = '20230101', save = False, config = config)
     
     #计算两个因子相关性

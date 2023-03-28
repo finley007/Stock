@@ -180,12 +180,19 @@ class FixTimeClosingStragegy(ClosingStrategy):
     def close(self, data, factor, action, param):
         open_date = action.get_open_date()
         i = 0
-        close_price = []
-        while len(close_price) == 0:
+        close_date = ''
+        seaching = True
+        while seaching:
             close_date = self._dao.get_next_n_business_date(open_date, self._hold_time + i)
             if close_date != '':
-                close_price = data[data['trade_date'] == close_date]['close']
-                i = i + 1
+                try:
+                    close_price = data[data['trade_date'] == close_date]['close']
+                    if len(close_price) == 0:
+                        return None
+                    seaching = False
+                except Exception as e:
+                    print('Stock{0} did not transaction on {1}'.format(data['ts_code'][0], close_date))
+                    i = i + 1
             else:
                 return None
         action.set_close_date(close_date, data)
@@ -199,24 +206,30 @@ class SignalClosingStragegy(ClosingStrategy):
 
     def close(self, data, factor, action, param):
         open_date = action.get_open_date()
+        close_date = ''
         if param == '':
             sell_action_list = data[data[factor.get_signal()] == -1]
         else:
             sell_action_list = data[data[factor.get_signal(param)] == -1]
-        for sell_action in sell_action_list.iterrows():
-            # 选取开仓日之后第一个平仓信号
-            signal_date = action[1]['trade_date']
-            if open_date >= signal_date:
+        #遍历卖出信号，选择当前open_date之后的第一个卖出信号
+        for sell in sell_action_list.iterrows():
+            signal_date = sell[1]['trade_date']
+            if signal_date <= open_date:
                 continue
-            next_day = True
-            while next_day:
-                close_date = self.get_action_date(data, factor, signal_date)
+            close_date = self._dao.get_next_n_business_date(signal_date, factor.get_signal_delay())
+            need_delay = True
+            while need_delay:
                 try:
                     close_price = data[data['trade_date'] == close_date]['close']
-                    next_day = False
+                    need_delay = False
                 except Exception as e:
                     print('Stock{0} did not transaction on {1}'.format(data['ts_code'][0], close_date))
-                    continue
+                    close_date = self._dao.get_next_business_date(close_date)
+                    if close_date == '':
+                        return None
+            break
+        if close_date == '':
+            return None
         action.set_close_date(close_date, data)
         action.set_close_price(close_price)
         return action
@@ -410,6 +423,9 @@ class StockSimulator(Simulator):
             data = data[(data['trade_date'] >= start_date) & (data['trade_date'] <= end_date)]
         return (data, start_date, end_date)
     
+    #获取执行时间
+    def get_action_date(self, data, factor, factor_date):
+        return self._dao.get_next_n_business_date(factor_date, factor.get_signal_delay())
     
     #预处理
     def pre_handle(self, data):
@@ -423,24 +439,29 @@ class StockSimulator(Simulator):
             buy_action_list = data[data[factor.get_signal(param)] == 1]
         action_records = []
         for action in buy_action_list.iterrows():
-            open_date = action[1]['trade_date']
-            print('Open for {0}'.format(open_date))
-            next_day = True
-            # 如果第二天停盘，则下一个交易日开仓
-            while next_day:
+            signal_date = action[1]['trade_date']
+            action_date = self.get_action_date(data, factor, signal_date)
+            print('Open for {0}'.format(action_date))
+            need_deplay = True
+            # 停盘处理
+            while need_deplay:
                 try:
-                    open_date = self.get_action_date(data, factor, open_date)
-                    action_records.append(LongAction(open_date, data[data['trade_date'] == open_date]['open'].iloc[0], data))
-                    next_day = False
+                    action_records.append(LongAction(action_date, data[data['trade_date'] == action_date]['open'].iloc[0], data))
+                    need_deplay = False
                 except Exception as e:
-                    print('Stock{0} did not transaction on {1}'.format(data['ts_code'][0], open_date))
-                    continue
+                    print('Stock{0} did not transaction on {1}'.format(data['ts_code'][0], action_date))
+                    action_date = self._dao.get_next_business_date(action_date)
+                    if action_date == '':
+                        continue
         # 计算平仓时间
         closing_stratege = config.get_closing_stratege()
+        to_be_removed = []
         for action in action_records:
             if not(closing_stratege.close(data, factor, action, param)):
-                action_records.remove(action)
+                to_be_removed.append(action)
             print('Close for open date:{0} and close date:{1}'.format(action.get_open_date(), action.get_close_date()))
+        for action in to_be_removed:
+            action_records.remove(action)
         # 是否可重复开仓
         if not config.get_repeat_opening():
             action_sequence = []

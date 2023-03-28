@@ -112,8 +112,7 @@ def open_url(url):
     webbrowser.open(url)
     
 if __name__ == '__main__':
-    print(get_current_date())
-    # print(get_current_time())
+    print(get_current_time())
     # print(parse_time('2021-01-08 09:33:00'))
     # print(get_date_scope('20210920','20210926'))
     # print(create_instance('sklearn.linear_model', 'LinearRegression'))
