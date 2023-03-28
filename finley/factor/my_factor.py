@@ -13,7 +13,7 @@ from persistence import DaoMysqlImpl, FileUtils
 from factor.base_factor import Factor, CombinedParamFactor
 from visualization import draw_histogram
 from indicator import RSI
-from simulator import StockSimulator 
+from simulator import SignalClosingStragegy, SimulationConfig, StockSimulator 
 
 '''
 过去n天上涨比例因子
@@ -186,13 +186,13 @@ if __name__ == '__main__':
     # draw_histogram(ret_list, bin_num=100)
     
     #图像分析
-    data = FileUtils.get_file_by_ts_code('002454.SZ', is_reversion = True)
-    factor = RSIGoldenCross([7,14])
-    data = factor.caculate(data)
-    data['index_trade_date'] = pd.to_datetime(data['trade_date'])
-    data = data.set_index(['index_trade_date'])
-    draw_analysis_curve(data[(data['trade_date'] <= '20230324') & (data['trade_date'] > '20230101')], volume = False, show_signal = True, signal_keys = [factor.get_key(), factor.get_signal()])
-    print('aa')
+    # data = FileUtils.get_file_by_ts_code('002454.SZ', is_reversion = True)
+    # factor = RSIGoldenCross([7,14])
+    # data = factor.caculate(data)
+    # data['index_trade_date'] = pd.to_datetime(data['trade_date'])
+    # data = data.set_index(['index_trade_date'])
+    # draw_analysis_curve(data[(data['trade_date'] <= '20230324') & (data['trade_date'] > '20230101')], volume = False, show_signal = True, signal_keys = [factor.get_key(), factor.get_signal()])
+    # print('aa')
     
     #模拟
     data = FileUtils.get_file_by_ts_code('002454.SZ', is_reversion = False)
@@ -203,7 +203,9 @@ if __name__ == '__main__':
     # # # factor = EnvelopePenetration_ATR([20])
     factor = RSIGoldenCross([7,14])
     simulator = StockSimulator()
-    simulator.simulate(factor, data, start_date = '20230101', save = False)
+    config = SimulationConfig()
+    config.set_closing_stratege(SignalClosingStragegy())
+    simulator.simulate(factor, data, start_date = '20230101', save = False, config = config)
     
     #计算两个因子相关性
     # data = FileUtils.get_file_by_ts_code('600256.SH', is_reversion = True)

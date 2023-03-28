@@ -197,30 +197,26 @@ class SignalClosingStragegy(ClosingStrategy):
     信号平仓
     """
 
-
     def close(self, data, factor, action, param):
         open_date = action.get_open_date()
         if param == '':
-            sell_action_list = data[data[factor.get_signal()] == 1]
+            sell_action_list = data[data[factor.get_signal()] == -1]
         else:
-            sell_action_list = data[data[factor.get_signal(param)] == 1]
-        for action in sell_action_list.iterrows():
+            sell_action_list = data[data[factor.get_signal(param)] == -1]
+        for sell_action in sell_action_list.iterrows():
+            # 选取开仓日之后第一个平仓信号
             signal_date = action[1]['trade_date']
-            action_date = self.get_action_date(data, factor, signal_date)
-            try:
-                action_records.append(LongAction(trade_date, data[data['trade_date'] == trade_date]['open'].iloc[0], data))
-            except Exception as e:
-                print('Stock{0} did not transaction on {1}'.format(data['ts_code'][0], trade_date))
+            if open_date >= signal_date:
                 continue
-        i = 0
-        close_price = []
-        while len(close_price) == 0:
-            close_date = self._dao.get_next_n_business_date(open_date, self._hold_time + i)
-            if close_date != '':
-                close_price = data[data['trade_date'] == close_date]['close']
-                i = i + 1
-            else:
-                return None
+            next_day = True
+            while next_day:
+                close_date = self.get_action_date(data, factor, signal_date)
+                try:
+                    close_price = data[data['trade_date'] == close_date]['close']
+                    next_day = False
+                except Exception as e:
+                    print('Stock{0} did not transaction on {1}'.format(data['ts_code'][0], close_date))
+                    continue
         action.set_close_date(close_date, data)
         action.set_close_price(close_price)
         return action
@@ -414,14 +410,6 @@ class StockSimulator(Simulator):
             data = data[(data['trade_date'] >= start_date) & (data['trade_date'] <= end_date)]
         return (data, start_date, end_date)
     
-    #获取执行时间
-    def get_action_date(self, data, factor, factor_date):
-        trade_date = self._dao.get_next_business_date(factor_date)
-        signal_delay = factor.get_signal_delay()
-        while(signal_delay > 1):
-            trade_date = self._dao.get_next_business_date(trade_date)
-            signal_delay = signal_delay - 1
-        return trade_date
     
     #预处理
     def pre_handle(self, data):
@@ -435,18 +423,22 @@ class StockSimulator(Simulator):
             buy_action_list = data[data[factor.get_signal(param)] == 1]
         action_records = []
         for action in buy_action_list.iterrows():
-            factor_date = action[1]['trade_date']
-            trade_date = self.get_action_date(data, factor, factor_date)
-            print('Open for {0}'.format(trade_date))
-            try:
-                action_records.append(LongAction(trade_date, data[data['trade_date'] == trade_date]['open'].iloc[0], data))
-            except Exception as e:
-                print('Stock{0} did not transaction on {1}'.format(data['ts_code'][0], trade_date))
-                continue
+            open_date = action[1]['trade_date']
+            print('Open for {0}'.format(open_date))
+            next_day = True
+            # 如果第二天停盘，则下一个交易日开仓
+            while next_day:
+                try:
+                    open_date = self.get_action_date(data, factor, open_date)
+                    action_records.append(LongAction(open_date, data[data['trade_date'] == open_date]['open'].iloc[0], data))
+                    next_day = False
+                except Exception as e:
+                    print('Stock{0} did not transaction on {1}'.format(data['ts_code'][0], open_date))
+                    continue
         # 计算平仓时间
         closing_stratege = config.get_closing_stratege()
         for action in action_records:
-            if not(closing_stratege.close(data, factor, action)):
+            if not(closing_stratege.close(data, factor, action, param)):
                 action_records.remove(action)
             print('Close for open date:{0} and close date:{1}'.format(action.get_open_date(), action.get_close_date()))
         # 是否可重复开仓
