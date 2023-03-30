@@ -157,6 +157,17 @@ class RSIGoldenCross(CombinedParamFactor):
             return -1
         else:
             return 0 
+
+    def score(self, data):
+        """
+        信号加权，越近时间出现信号量，得分越高
+        """
+        data = self.caculate(data)
+        score = 0
+        scores = [1, 4, 9, 16, 25]
+        signals = data[factor.get_signal()].tolist()
+        if len[data] >= 5:
+            score = np.dot(scores, signals[-5:])
         
         
 if __name__ == '__main__':

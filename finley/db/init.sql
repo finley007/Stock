@@ -379,6 +379,10 @@ insert into factor_combination values ('combination1','MACDPenetration|RSIRegres
 insert into factor_combination_mapping values ('aa','combination1','MACDPenetration_v1.0_12|16|9___','');
 insert into factor_combination_mapping values ('bb','combination1','RSIRegression_v1.0_14___','14');
 
+insert into factor_combination values ('combination2','MACDPenetration|RSIGoldenCross');
+insert into factor_combination_mapping values ('cc','combination2','MACDPenetration_v1.0_12|16|9___','');
+insert into factor_combination_mapping values ('dd','combination2','RSIGoldenCross_v1.0_7|14___','');
+
 insert into learning_model values ('1', '{"training_set":[{"ts_code":"000858.SZ","start_date":"20190701","end_date":"20200310"}],"profit_period":"5","pre_process":[],"algorithm":"LinearRegression"}', '震荡行情');
 insert into learning_model values ('2', '{"training_set":[{"ts_code":"000858.SZ","start_date":"20200325","end_date":"20210105"}],"profit_period":"5","pre_process":[],"algorithm":"LinearRegression"}', '攀升行情');
 insert into learning_model values ('3', '{"training_set":[{"ts_code":"000858.SZ","start_date":"20200525","end_date":"20210901"}],"profit_period":"5","pre_process":[],"algorithm":"LinearRegression"}', '下降行情');

@@ -365,7 +365,7 @@ if __name__ == '__main__':
     # run_factor_analysis('factor.momentum_factor', 'MomentumRegression_v1.0_20___', '')
     # run_factor_analysis('factor.momentum_factor', 'DiscreteIndex_v1.0_10|40___', '')
     # run_factor_analysis('factor.momentum_factor', 'MACDPenetration_v1.0_12|16|9___', '')
-    run_factor_analysis('factor.my_factor', 'RSIGoldenCross_v1.0_7|14___', '')
+    # run_factor_analysis('factor.my_factor', 'RSIGoldenCross_v1.0_7|14___', '')
     # 因子收益率分布分析
     # run_factor_ret_distribution_analysis('factor.my_factor', 'RisingTrend_v1.0_5|10_0.8|0.7__', '')
     # run_factor_ret_distribution_analysis('factor.my_factor', 'FallingTrend_v1.0_10|15|20_0.9|0.8|0.7__', '')
@@ -383,7 +383,7 @@ if __name__ == '__main__':
     # run_factor_ret_distribution_analysis('factor.momentum_factor', 'RVIPenetration_v1.0_10__', '', '')
     # run_factor_ret_distribution_analysis('factor.momentum_factor', 'SOPenetration_v1.0_10__', '', '')
     # 复合因子收益率分析
-    # run_combination_factor_ret_distribution_analysis('combination1')
+    # run_combination_factor_ret_distribution_analysis('combination2')
     # # 参数调优
     # params = [4, 6, 8, 10, 12, 14, 16, 18, 20 ,22, 24, 26, 28 ,30,32,34,36,38,40]
     # ts_code = 'IF2204'
@@ -392,7 +392,7 @@ if __name__ == '__main__':
     #     run_single_factor_simulation('factor.trend_factor', code, ts_code, False)
         # print(code)
     # 单一因子模拟
-    run_single_factor_simulation('factor.momentum_factor', 'RSIRegression_v1.0_14___', ts_code = '601360.SH')
+    # run_single_factor_simulation('factor.momentum_factor', 'RSIRegression_v1.0_14___', ts_code = '601360.SH')
     # 复合因子模拟
     # factor_list = []
     # factor_list.append(MeanPenetration([20]))
@@ -407,7 +407,7 @@ if __name__ == '__main__':
     # factor = MeanTrendFirstDiff([10])
     # factor = FIPenetration([26])
     # factor = MultipleMeanPenetration([10, 20])
-    # data = select_stock([factor])
+    data = select_stock([factor])
     # 复盘
     # factor1 = KDJRegression([9])
     # factor2 = RSIPenetration([14])
