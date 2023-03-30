@@ -37,7 +37,6 @@ def select_stock(factor_list, stock_list = [], save_result = True, open_link = T
     score = []
     ts_code = []
     factor_code_list = []
-    factor_value_list = []
     for factor in factor_list:
         factor_code_list.append(factor.get_factor_code())
     if (last_business_date == ''):

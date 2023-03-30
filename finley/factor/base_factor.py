@@ -258,7 +258,41 @@ class CombinedParamFactor(Factor):
             if end_date != '':
                 data = data[data['date'] <= start_date]
         return data[self.get_key()].tolist()
+
+class CombinationFactor(Factor):
     
+    def __init__(self, factor_code, factor_list, params_mapping):
+        self._factor_list = factor_list
+        self._factor_code = factor_code
+        self._params_mapping = params_mapping
+        
+    def append_factor(self, factor):
+        self._factor_list.append(factor)
+        
+    def get_signal(self):
+        return self.factor_code + '.signal'
+        
+    def caculate(self, data):
+        for factor in self._factor_list:
+            factor.caculate(data)
+        data[self.get_signal()] = 1
+        for factor in self._factor_list:
+            if isinstance(factor.get_params(),list):
+                data[self.get_signal()] = np.array(data[factor.get_signal(self._params_mapping[factor.get_factor_code()])]) * data[self.get_signal()]
+            else:
+                data[self.get_signal()] = np.array(data[factor.get_signal()]) * data[self.get_signal()]
+    
+    def score(self):
+        data = self.caculate(data)
+        score = 0
+        scores = [1, 4, 9, 16, 25]
+        signals = data[self.get_signal()].tolist()
+        if len[data] >= 5:
+            score = np.dot(scores, signals[-5:])
+        return score
+        
+    
+        
 if __name__ == '__main__':
     print(Factor.get_factor_by_code('factor.momentum_factor','kdj_regression'))
         

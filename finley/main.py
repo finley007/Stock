@@ -3,14 +3,14 @@
 
 import pandas as pd
 import time
-from factor.base_factor import Factor
+from factor.base_factor import CombinationFactor, Factor
 import os
 import uuid
 import numpy as np
 
-from factor.my_factor import LowerHatch
+from factor.my_factor import LowerHatch, RSIGoldenCross
 from factor.trend_factor import MeanInflectionPoint, MeanTrend, MeanPenetration, MeanTrendFirstDiff, MultipleMeanPenetration
-from factor.momentum_factor import KDJRegression, RSIRegression, DRFRegression, SOPenetration
+from factor.momentum_factor import KDJRegression, MACDPenetration, RSIRegression, DRFRegression, SOPenetration
 from factor.volume_factor import MFIPenetration, OBVTrend, FIPenetration
 from filter import NewStockFilter, STFilter, create_filter_list, filter_stock
 from persistence import DaoMysqlImpl, FileUtils, create_session, FactorAnalysis, DistributionResult, FactorRetDistribution, FactorCaseDao
@@ -365,7 +365,7 @@ if __name__ == '__main__':
     # run_factor_analysis('factor.momentum_factor', 'MomentumRegression_v1.0_20___', '')
     # run_factor_analysis('factor.momentum_factor', 'DiscreteIndex_v1.0_10|40___', '')
     # run_factor_analysis('factor.momentum_factor', 'MACDPenetration_v1.0_12|16|9___', '')
-    # run_factor_analysis('factor.my_factor', 'RSIGoldenCross_v1.0_7|14___', '')
+    run_factor_analysis('factor.my_factor', 'RSIGoldenCross_v1.0_7|14___', '')
     # 因子收益率分布分析
     # run_factor_ret_distribution_analysis('factor.my_factor', 'RisingTrend_v1.0_5|10_0.8|0.7__', '')
     # run_factor_ret_distribution_analysis('factor.my_factor', 'FallingTrend_v1.0_10|15|20_0.9|0.8|0.7__', '')
@@ -399,15 +399,15 @@ if __name__ == '__main__':
     # factor_list.append(MeanTrend([20]))
     # run_compound_factor_simulation(factor_list, '1', '20210101')
     # 选股
-    # factor1 = KDJRegression([9])
-    # factor2 = RSIPenetration([14])
-    # data = select_stock([factor1, factor2])
+    factor1 = MACDPenetration([12,16,9])
+    factor2 = RSIGoldenCross([7,14])
+    data = select_stock(CombinationFactor([factor1, factor2]))
     # factor = SOPenetration([10])
     # factor = MFIPenetration([14])
     # factor = MeanTrendFirstDiff([10])
     # factor = FIPenetration([26])
     # factor = MultipleMeanPenetration([10, 20])
-    data = select_stock([factor])
+    # data = select_stock([factor])
     # 复盘
     # factor1 = KDJRegression([9])
     # factor2 = RSIPenetration([14])

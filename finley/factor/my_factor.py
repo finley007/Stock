@@ -168,6 +168,7 @@ class RSIGoldenCross(CombinedParamFactor):
         signals = data[factor.get_signal()].tolist()
         if len[data] >= 5:
             score = np.dot(scores, signals[-5:])
+        return score
         
         
 if __name__ == '__main__':
