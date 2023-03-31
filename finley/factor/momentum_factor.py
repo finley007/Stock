@@ -121,6 +121,7 @@ class MACDPenetration(CombinedParamFactor):
         data[MACDPenetration.factor_code] = 0
         if create_signal:
             data['cross'] = data[[self.get_key()]].rolling(2).apply(lambda item: self.get_action_mapping(item))
+            data[self.get_signal()] = 0
             # 金叉开仓
             data.loc[(data['cross'] == 1) & (data['DIFF'] > 0) & (data['DEA'] > 0), self.get_signal()] = 1
             # 死叉平仓

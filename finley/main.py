@@ -353,7 +353,7 @@ def run_combination_factor_ret_distribution_analysis(combination_id, filters='',
         
         
 if __name__ == '__main__':
-    pre_check()
+    # pre_check()
     # 相关性分析
     # factor = OBVTrend([0])
     # do_correlation_analysis(factor)
@@ -365,7 +365,7 @@ if __name__ == '__main__':
     # run_factor_analysis('factor.momentum_factor', 'MomentumRegression_v1.0_20___', '')
     # run_factor_analysis('factor.momentum_factor', 'DiscreteIndex_v1.0_10|40___', '')
     # run_factor_analysis('factor.momentum_factor', 'MACDPenetration_v1.0_12|16|9___', '')
-    run_factor_analysis('factor.my_factor', 'RSIGoldenCross_v1.0_7|14___', '')
+    # run_factor_analysis('factor.my_factor', 'RSIGoldenCross_v1.0_7|14___', '')
     # 因子收益率分布分析
     # run_factor_ret_distribution_analysis('factor.my_factor', 'RisingTrend_v1.0_5|10_0.8|0.7__', '')
     # run_factor_ret_distribution_analysis('factor.my_factor', 'FallingTrend_v1.0_10|15|20_0.9|0.8|0.7__', '')
@@ -401,7 +401,7 @@ if __name__ == '__main__':
     # 选股
     factor1 = MACDPenetration([12,16,9])
     factor2 = RSIGoldenCross([7,14])
-    data = select_stock(CombinationFactor([factor1, factor2]))
+    data = select_stock([CombinationFactor('combination2', [factor1, factor2])])
     # factor = SOPenetration([10])
     # factor = MFIPenetration([14])
     # factor = MeanTrendFirstDiff([10])

@@ -106,7 +106,7 @@ def filter_stock(filter_list, data):
             return False
     return True
     
-def create_filter_list(filters):
+def create_filter_list(filters=''):
     filter_list = []
     if filters == '':
         return filter_list

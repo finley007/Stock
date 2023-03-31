@@ -41,7 +41,7 @@ def select_stock(factor_list, stock_list = [], save_result = True, open_link = T
         factor_code_list.append(factor.get_factor_code())
     if (last_business_date == ''):
         last_business_date = persistence.get_last_business_date()
-    filter_list = create_filter_list(last_business_date)
+    filter_list = create_filter_list()
     for stock in stock_list:
         print("Handle stock: " + stock[0])
         data = FileUtils.get_file_by_ts_code(stock[0], True)

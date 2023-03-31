@@ -261,7 +261,7 @@ class CombinedParamFactor(Factor):
 
 class CombinationFactor(Factor):
     
-    def __init__(self, factor_code, factor_list, params_mapping):
+    def __init__(self, factor_code, factor_list, params_mapping={}):
         self._factor_list = factor_list
         self._factor_code = factor_code
         self._params_mapping = params_mapping
@@ -274,20 +274,25 @@ class CombinationFactor(Factor):
         
     def caculate(self, data):
         for factor in self._factor_list:
-            factor.caculate(data)
+            data = factor.caculate(data)
         data[self.get_signal()] = 1
         for factor in self._factor_list:
             if isinstance(factor.get_params(),list):
                 data[self.get_signal()] = np.array(data[factor.get_signal(self._params_mapping[factor.get_factor_code()])]) * data[self.get_signal()]
             else:
-                data[self.get_signal()] = np.array(data[factor.get_signal()]) * data[self.get_signal()]
+                mask = data[factor.get_signal()].tolist()
+                print(data[self.get_signal()].tolist())
+                print(mask)
+                data[self.get_signal()] = np.array(mask) * data[self.get_signal()]
+                print(data[self.get_signal()].tolist())
+        return data
     
-    def score(self):
+    def score(self, data):
         data = self.caculate(data)
         score = 0
         scores = [1, 4, 9, 16, 25]
         signals = data[self.get_signal()].tolist()
-        if len[data] >= 5:
+        if len(signals) >= 5:
             score = np.dot(scores, signals[-5:])
         return score
         
