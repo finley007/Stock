@@ -28,7 +28,7 @@ def _ts_code_transform(orignal_str):
 
 # 选股
 @run_with_timecost
-def select_stock(factor_list, stock_list = [], save_result = True, open_link = True, last_business_date = ''):
+def select_stock(factor_list, stock_list = [], param_mapping = {}, filter_exp = '', save_result = True, open_link = True, last_business_date = ''):
     persistence = DaoMysqlImpl()
     if (len(stock_list) == 0):
         stock_list = persistence.select("select ts_code from static_stock_list")
@@ -41,7 +41,7 @@ def select_stock(factor_list, stock_list = [], save_result = True, open_link = T
         factor_code_list.append(factor.get_factor_code())
     if (last_business_date == ''):
         last_business_date = persistence.get_last_business_date()
-    filter_list = create_filter_list()
+    filter_list = create_filter_list(filter_exp)
     for stock in stock_list:
         print("Handle stock: " + stock[0])
         data = FileUtils.get_file_by_ts_code(stock[0], True)
@@ -49,7 +49,10 @@ def select_stock(factor_list, stock_list = [], save_result = True, open_link = T
             data = data[data['trade_date'] <= last_business_date]
             temp = []
             for factor in factor_list:
-                temp.append(factor.score(data))
+                if isinstance(factor.get_params(),list):
+                    temp.append(factor.score(data, param_mapping[factor.get_factor_code()]))
+                else:
+                    temp.append(factor.score(data))
             score.append(temp)
             ts_code.append(stock[0])
     score_matrix = pd.DataFrame(score, columns=factor_code_list, index=ts_code)
@@ -70,7 +73,7 @@ def select_stock(factor_list, stock_list = [], save_result = True, open_link = T
             for stock in score_matrix.itertuples(): 
                 new_ts_code = _ts_code_transform(getattr(stock,'ts_code'))
                 link = Template(constants.STOCK_INFO_LINK).safe_substitute(ts_code = new_ts_code)
-                item = (anaylysis_id, create_factor_code(factor_list), getattr(stock,'score'), create_factor_params(factor_list), getattr(stock,'ts_code'), link, last_business_date,'','','','','')
+                item = (anaylysis_id, create_factor_code(factor_list), getattr(stock,'score'), create_factor_params(factor_list, param_mapping), getattr(stock,'ts_code'), link, last_business_date,'','','','','')
                 persistence.insert('insert into analysis_result values (REPLACE(UUID(),"-",""),%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)', [item])
             if (open_link):
                 open_selected_stocks_link(anaylysis_id)
@@ -108,8 +111,14 @@ def position_analysis(factor, ts_code, open_date, open_price, volume, is_reversi
 def create_factor_code(factor_list):
     return '_'.join(map(lambda x: str(x.get_factor_code()), factor_list))
                     
-def create_factor_params(factor_list):
-    return '_'.join(map(lambda x: str(x.get_params()[0]), factor_list))
+def create_factor_params(factor_list, param_mapping):
+    params_detail = ''
+    for factor in factor_list:
+        if isinstance(factor.get_params(),list):
+            params_detail = params_detail + param_mapping[factor.get_factor_code()] + '|'
+        else:
+            params_detail = params_detail + '|'
+    return params_detail
  
 # 打开选股结果
 def open_selected_stocks_link(anlysis_id):

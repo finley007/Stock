@@ -51,14 +51,17 @@ class Factor(metaclass = ABCMeta):
         """
         return list(map(lambda param: self.factor_code + '.' + str(param) + '.signal', self._params))
     
-    def score(self, data):
+    def score(self, data, param=''):
         """
         根据新的设计重新实现
         """
         # data = data.loc[len(data)-self._params[0]:len(data)-1]
         data = self.caculate(data)
         #最近一天的最小参数
-        return data.iloc[len(data) - 1][self.get_factor_code()]
+        if isinstance(self.get_params(),list):
+            return data.iloc[len(data) - 1][self.get_key(param)]
+        else:
+            return data.iloc[len(data) - 1][self.get_key()]
     
     def analyze(self, stock_list=[], start_date = '', end_date = ''):
         """
