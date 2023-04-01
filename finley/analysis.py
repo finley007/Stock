@@ -69,7 +69,7 @@ def select_stock(factor_list, stock_list = [], param_mapping = {}, filter_exp = 
         score_matrix = score_matrix[score_matrix['score'].notnull()]
         score_matrix = score_matrix.iloc[len(score_matrix) - int(constants.ANALYSIS_RESULT_TOP_N): len(score_matrix)]
         if (save_result): 
-            anaylysis_id = uuid.uuid1()
+            anaylysis_id = str(uuid.uuid1()).replace('-','')
             for stock in score_matrix.itertuples(): 
                 new_ts_code = _ts_code_transform(getattr(stock,'ts_code'))
                 link = Template(constants.STOCK_INFO_LINK).safe_substitute(ts_code = new_ts_code)

@@ -274,6 +274,9 @@ class CombinationFactor(Factor):
         
     def get_signal(self):
         return self.factor_code + '.signal'
+
+    def get_params(self):
+        return ''
         
     def caculate(self, data):
         for factor in self._factor_list:
