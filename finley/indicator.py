@@ -566,9 +566,9 @@ class RSI(Indicator):
         data.loc[data['change'] > 0, 'increase'] = data['change']
         data.loc[data['change'] < 0, 'decrease'] = -data['change']
         for param in self._params:
-            data['au'+str(param)] = data['increase'].rolling(param).sum()
-            data['ad'+str(param)] = data['decrease'].rolling(param).sum()
-            data[self.get_key(param)] = 100 - (100 / (1 + data['au'+str(param)]/data['ad'+str(param)]))
+            data['au.'+str(param)] = data['increase'].ewm(span=param, adjust=False).mean()
+            data['ad.'+str(param)] = data['decrease'].ewm(span=param, adjust=False).mean()
+            data[self.get_key(param)] = 100 - (100 / (1 + data['au.'+str(param)]/data['ad.'+str(param)]))
         return data
     
 # RSV

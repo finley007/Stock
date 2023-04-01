@@ -140,20 +140,20 @@ class RSIGoldenCross(CombinedParamFactor):
         
     def __init__(self, params):
         self._params = params
+        self._indicator = RSI(self._params)
 
     def caculate(self, data, create_signal = True):
-        indicator = RSI(self._params)
-        data = indicator.enrich(data)
-        data[self.get_key()] = data[indicator.get_key(self._params[0])] - data[indicator.get_key(self._params[1])]
+        data = self._indicator.enrich(data)
+        data[self.get_key()] = data[self._indicator.get_key(self._params[0])] - data[self._indicator.get_key(self._params[1])]
         if create_signal:
             data[self.get_signal()] = data[[self.get_key()]].rolling(2).apply(lambda item: self.get_action_mapping(item))
         return data
     
     def get_action_mapping(self, item):
         key_list = item.tolist()
-        if key_list[0] < 0 and key_list[1] > 1:
+        if key_list[0] < 0 and key_list[1] > 0:
             return 1
-        elif key_list[0] > 0 and key_list[1] < 1:
+        elif key_list[0] > 0 and key_list[1] < 0:
             return -1
         else:
             return 0 
@@ -169,6 +169,9 @@ class RSIGoldenCross(CombinedParamFactor):
         if len(signals) >= 5:
             score = np.dot(scores, signals[-5:])
         return score
+    
+    def get_indicator(self):
+        return self._indicator
         
         
 if __name__ == '__main__':
@@ -198,27 +201,27 @@ if __name__ == '__main__':
     # draw_histogram(ret_list, bin_num=100)
     
     #图像分析
-    # data = FileUtils.get_file_by_ts_code('002454.SZ', is_reversion = True)
-    # factor = RSIGoldenCross([7,14])
-    # data = factor.caculate(data)
-    # data['index_trade_date'] = pd.to_datetime(data['trade_date'])
-    # data = data.set_index(['index_trade_date'])
-    # draw_analysis_curve(data[(data['trade_date'] <= '20230324') & (data['trade_date'] > '20230101')], volume = False, show_signal = True, signal_keys = [factor.get_key(), factor.get_signal()])
-    # print('aa')
+    data = FileUtils.get_file_by_ts_code('688023.SH', is_reversion = True)
+    factor = RSIGoldenCross([7,14])
+    data = factor.caculate(data)
+    data['index_trade_date'] = pd.to_datetime(data['trade_date'])
+    data = data.set_index(['index_trade_date'])
+    draw_analysis_curve(data[(data['trade_date'] > '20230315')], volume = False, show_signal = True, signal_keys = [factor.get_key(), factor.get_indicator().get_key(7)])
+    print('aa')
     
     #模拟
-    data = FileUtils.get_file_by_ts_code('002454.SZ', is_reversion = False)
-    # # factor = LowerHatch([5])
-    # factor = MeanInflectionPoint([20])
-    # # # factor = MeanPenetration([20])
-    # # # factor = EnvelopePenetration_MeanPercentage([20])
-    # # # factor = EnvelopePenetration_ATR([20])
-    factor = RSIGoldenCross([7,14])
-    simulator = StockSimulator()
-    config = SimulationConfig()
-    config.set_closing_stratege(SignalClosingStragegy())
-    # config.set_closing_stratege(FixTimeClosingStragegy(3))
-    simulator.simulate(factor, data, start_date = '20230101', save = False, config = config)
+    # data = FileUtils.get_file_by_ts_code('002454.SZ', is_reversion = False)
+    # # # factor = LowerHatch([5])
+    # # factor = MeanInflectionPoint([20])
+    # # # # factor = MeanPenetration([20])
+    # # # # factor = EnvelopePenetration_MeanPercentage([20])
+    # # # # factor = EnvelopePenetration_ATR([20])
+    # factor = RSIGoldenCross([7,14])
+    # simulator = StockSimulator()
+    # config = SimulationConfig()
+    # config.set_closing_stratege(SignalClosingStragegy())
+    # # config.set_closing_stratege(FixTimeClosingStragegy(3))
+    # simulator.simulate(factor, data, start_date = '20230101', save = False, config = config)
     
     #计算两个因子相关性
     # data = FileUtils.get_file_by_ts_code('600256.SH', is_reversion = True)

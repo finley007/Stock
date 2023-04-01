@@ -10,13 +10,14 @@ from scipy.stats import pearsonr
 from sklearn.linear_model import LinearRegression, Ridge, Lasso
 
 import constants
+from factor.my_factor import RSIGoldenCross
 from tools import run_with_timecost, get_current_date, open_url
 from persistence import DaoMysqlImpl, FileUtils
 from visualization import draw_histogram
 from filter import PriceFilter, STFilter, PERatioFilter, NewStockFilter, create_filter_list, filter_stock
-from factor.base_factor import Factor
+from factor.base_factor import CombinationFactor, Factor
 from factor.trend_factor import MeanTrend, EnvelopePenetration_Keltner, AdvanceEnvelopePenetration_Keltner, MeanPenetration, MeanInflectionPoint
-from factor.momentum_factor import KDJRegression, RSIRegression, DRFRegression, WRRegression, UOPenetration
+from factor.momentum_factor import KDJRegression, MACDPenetration, RSIRegression, DRFRegression, WRRegression, UOPenetration
 from factor.volume_factor import FIPenetration, MFIPenetration
 from machinelearning import MachineLearn, CompoundFactor, TrainingModel
 from simulator import Action
@@ -330,7 +331,13 @@ if __name__ == '__main__':
     # 因子相关性分析
     # factor_correlation_analysis(factor1, factor2)
     # 打开选股结果
-    open_selected_stocks_link('4e47cdd6-2304-11ed-8de4-acde4800')
+    # open_selected_stocks_link('4e47cdd6-2304-11ed-8de4-acde4800')
     # 声称股票统计信息
     # create_stock_statistics('20220321')
+    # 股票得分测试
+    factor1 = MACDPenetration([12,16,9])
+    factor2 = RSIGoldenCross([7,14])
+    data = FileUtils.get_file_by_ts_code('688023.sh', True)
+    print(data.iloc[0]['trade_date'] + '~' + data.iloc[-1]['trade_date'])
+    print(CombinationFactor('combination2', [factor1, factor2]).score(data))
     

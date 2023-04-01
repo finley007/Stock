@@ -125,7 +125,7 @@ class MACDPenetration(CombinedParamFactor):
             # 金叉开仓
             data.loc[(data['cross'] == 1) & (data['DIFF'] > 0) & (data['DEA'] > 0), self.get_signal()] = 1
             # 死叉平仓
-            data.loc[(data['cross'] == -1), self.get_signal()] = 1
+            data.loc[(data['cross'] == -1), self.get_signal()] = -1
         return data  
     
     def get_action_mapping(self, item):
@@ -357,8 +357,8 @@ class SOPenetration(Factor):
      
 if __name__ == '__main__':
     #图像分析
-    # data = FileUtils.get_file_by_ts_code('688819.SH', is_reversion = True)
-    # # factor = MACDPenetration([])
+    data = FileUtils.get_file_by_ts_code('688023.SH', is_reversion = True)
+    factor = MACDPenetration([12,16,9])
     # factor = MomentumPenetration([20])
     # factor = MomentumRegression([20])
     # factor = DiscreteIndex([10, 40])
@@ -369,10 +369,10 @@ if __name__ == '__main__':
     # factor = RVIPenetration([10])
     # data = factor.caculate(data)
     # factor = SOPenetration([10])
-    # data = factor.caculate(data)
-    # data['index_trade_date'] = pd.to_datetime(data['trade_date'])
-    # data = data.set_index(['index_trade_date'])
-    # draw_analysis_curve(data[(data['trade_date'] <= '20220125') & (data['trade_date'] > '20210101')], volume = False, show_signal = True, signal_keys = [factor.get_key()])
+    data = factor.caculate(data)
+    data['index_trade_date'] = pd.to_datetime(data['trade_date'])
+    data = data.set_index(['index_trade_date'])
+    draw_analysis_curve(data[(data['trade_date'] > '20230315')], volume = False, show_signal = True, signal_keys = [factor.get_key(), 'DIFF', 'DEA'])
     print('aa')
     # print(factor.score(data))
     

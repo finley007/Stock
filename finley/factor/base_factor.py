@@ -1,7 +1,8 @@
 #! /usr/bin/env python
 # -*- coding:utf8 -*-
 
-import os,sys 
+import os,sys
+
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) 
 sys.path.insert(0,parentdir) 
 from abc import ABCMeta, abstractclassmethod
@@ -280,17 +281,15 @@ class CombinationFactor(Factor):
         
     def caculate(self, data):
         for factor in self._factor_list:
+            # 每个子因子分别计算信号
             data = factor.caculate(data)
         data[self.get_signal()] = 1
         for factor in self._factor_list:
             if isinstance(factor.get_params(),list):
-                data[self.get_signal()] = np.array(data[factor.get_signal(self._params_mapping[factor.get_factor_code()])]) * data[self.get_signal()]
+                mask = data[factor.get_signal(self._params_mapping[factor.get_factor_code()])]
             else:
-                mask = data[factor.get_signal()].tolist()
-                print(data[self.get_signal()].tolist())
-                print(mask)
-                data[self.get_signal()] = np.array(mask) * data[self.get_signal()]
-                print(data[self.get_signal()].tolist())
+                mask = data[factor.get_signal()]
+            data[self.get_signal()] = np.array(mask) * data[self.get_signal()]
         return data
     
     def score(self, data):
@@ -306,7 +305,4 @@ class CombinationFactor(Factor):
         
 if __name__ == '__main__':
     print(Factor.get_factor_by_code('factor.momentum_factor','kdj_regression'))
-        
-
-    
         
