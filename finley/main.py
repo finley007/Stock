@@ -382,6 +382,7 @@ if __name__ == '__main__':
     # run_factor_ret_distribution_analysis('factor.momentum_factor', 'UOPenetration_v1.0_7|14|28__', '', '')
     # run_factor_ret_distribution_analysis('factor.momentum_factor', 'RVIPenetration_v1.0_10__', '', '')
     # run_factor_ret_distribution_analysis('factor.momentum_factor', 'SOPenetration_v1.0_10__', '', '')
+    run_factor_ret_distribution_analysis('factor.analysis_factor', 'LimitUp_v1.0_1__', '', '')
     # 复合因子收益率分析
     # run_combination_factor_ret_distribution_analysis('combination2')
     # # 参数调优
@@ -399,9 +400,9 @@ if __name__ == '__main__':
     # factor_list.append(MeanTrend([20]))
     # run_compound_factor_simulation(factor_list, '1', '20210101')
     # 选股
-    factor1 = MACDPenetration([12,16,9])
-    factor2 = RSIGoldenCross([7,14])
-    data = select_stock([CombinationFactor('combination2', [factor1, factor2])])
+    # factor1 = MACDPenetration([12,16,9])
+    # factor2 = RSIGoldenCross([7,14])
+    # data = select_stock([CombinationFactor('combination2', [factor1, factor2])])
     # factor = SOPenetration([10])
     # factor = MFIPenetration([14])
     # factor = MeanTrendFirstDiff([10])

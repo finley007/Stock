@@ -103,6 +103,21 @@ def to_params(str):
         return [int(str)]
     except ValueError:
         return [float(str)]
+    
+def approximately_equal_to(a, b, distance=0.001):
+    """
+    约等于，用于判断涨跌停
+    Parameters
+    ----------
+    a
+    b
+    distance
+
+    Returns
+    -------
+
+    """
+    return abs(a - b) < distance
 
 @run_with_timecost
 def f1():
