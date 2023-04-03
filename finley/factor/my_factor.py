@@ -133,6 +133,56 @@ class LowerHatch(Factor):
 '''
 RSI 金叉
 '''
+class Launch(CombinedParamFactor):
+
+    factor_code = 'launch'
+    version = '1.0'
+        
+    def __init__(self, params):
+        self._params = params
+
+    def caculate(self, data, create_signal = True):
+        #用极值替代标准差，衡量一段时间的振幅
+        data['period_price_max'] = data['close'].shift(1).rolling(self._params[0]).max()
+        data['period_price_min'] = data['close'].shift(1).rolling(self._params[0]).min()
+        data['period_price_width'] = (data['period_price_max'] - data['period_price_min'])/data['close']
+        data['period_volume_max'] = data['volume'].shift(1).rolling(self._params[0]).max()
+        data['period_volume_min'] = data['volume'].shift(1).rolling(self._params[0]).min()
+        data['period_volume_width'] = (data['period_volume_max'] - data['period_volume_min'])/data['volume']
+        # 窄幅震荡 + 成交量窄幅震荡 + 价格突破 + 成交量突破
+        data[self.get_key()] = ((data['close'] - data['period_price_max'])/data['close'] + (data['volume'] - data['period_volume_max'])/data['volume'])/data['period_price_width'] * data['period_volume_width']
+        if create_signal:
+            data[self.get_signal()] = data[[self.get_key()]].apply(lambda item: self.get_action_mapping(item))
+        return data
+    
+    def get_action_mapping(self, item):
+        """
+        只做多不做空
+        """
+        if item > 0:
+            return 1
+        else:
+            return 0 
+
+    def score(self, data):
+        """
+        信号加权，越近时间出现信号量，得分越高
+        """
+        data = self.caculate(data)
+        score = 0
+        scores = [1, 4, 9, 16, 25]
+        signals = data[factor.get_signal()].tolist()
+        if len(signals) >= 5:
+            score = np.dot(scores, signals[-5:])
+        return score
+    
+    def get_indicator(self):
+        return self._indicator
+        
+    
+'''
+启动因子
+'''
 class RSIGoldenCross(CombinedParamFactor):
 
     factor_code = 'rsi_golden_cross'
@@ -172,7 +222,6 @@ class RSIGoldenCross(CombinedParamFactor):
     
     def get_indicator(self):
         return self._indicator
-        
         
 if __name__ == '__main__':
     # 因子分析
