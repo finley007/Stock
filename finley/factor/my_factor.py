@@ -131,7 +131,7 @@ class LowerHatch(Factor):
             return 0
         
 '''
-RSI 金叉
+启动因子
 '''
 class Launch(CombinedParamFactor):
 
@@ -145,12 +145,12 @@ class Launch(CombinedParamFactor):
         #用极值替代标准差，衡量一段时间的振幅
         data['period_price_max'] = data['close'].shift(1).rolling(self._params[0]).max()
         data['period_price_min'] = data['close'].shift(1).rolling(self._params[0]).min()
-        data['period_price_width'] = (data['period_price_max'] - data['period_price_min'])/data['close']
+        data['period_price_width'] = (data['period_price_max'] - data['period_price_min'])/data['period_price_min']
         data['period_volume_max'] = data['volume'].shift(1).rolling(self._params[0]).max()
         data['period_volume_min'] = data['volume'].shift(1).rolling(self._params[0]).min()
-        data['period_volume_width'] = (data['period_volume_max'] - data['period_volume_min'])/data['volume']
+        data['period_volume_width'] = (data['period_volume_max'] - data['period_volume_min'])/data['period_volume_min']
         # 窄幅震荡 + 成交量窄幅震荡 + 价格突破 + 成交量突破
-        data[self.get_key()] = ((data['close'] - data['period_price_max'])/data['close'] + (data['volume'] - data['period_volume_max'])/data['volume'])/data['period_price_width'] * data['period_volume_width']
+        data[self.get_key()] = (((data['close'] - data['period_price_max'])/data['period_price_max']) * ((data['volume'] - data['period_volume_max']))/data['period_volume_max'])/(data['period_price_width'] * data['period_volume_width'])
         if create_signal:
             data[self.get_signal()] = data[[self.get_key()]].apply(lambda item: self.get_action_mapping(item))
         return data
