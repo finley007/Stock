@@ -87,10 +87,6 @@ def test_set():
     print("a" in my_set)
     
     
-def test_df_template_operation():
-    
-    
-    
 if __name__ == '__main__':
     # test_ewm()
     # test_ewm_with_params()
@@ -99,5 +95,5 @@ if __name__ == '__main__':
     # test_traversal_array()
     # test_list_2_string()
     # test_circular_backtracking()
-    # test_parse_str()
-    test_set()
+    test_parse_str()
+    # test_set()

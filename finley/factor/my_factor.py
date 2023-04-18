@@ -146,13 +146,16 @@ class Launch(CombinedParamFactor):
         data['period_price_max'] = data['close'].shift(1).rolling(self._params[0]).max()
         data['period_price_min'] = data['close'].shift(1).rolling(self._params[0]).min()
         data['period_price_width'] = (data['period_price_max'] - data['period_price_min'])/data['period_price_min']
-        data['period_volume_max'] = data['volume'].shift(1).rolling(self._params[0]).max()
-        data['period_volume_min'] = data['volume'].shift(1).rolling(self._params[0]).min()
+        data['period_price_breakthrough_amp'] = (data['close'] - data['period_price_max'])/data['period_price_max']
+        data['period_volume_max'] = data['vol'].shift(1).rolling(self._params[0]).max()
+        data['period_volume_min'] = data['vol'].shift(1).rolling(self._params[0]).min()
         data['period_volume_width'] = (data['period_volume_max'] - data['period_volume_min'])/data['period_volume_min']
+        data['period_volume_breakthrough_amp'] = (data['vol'] - data['period_volume_max'])/data['period_volume_max']
         # 窄幅震荡 + 成交量窄幅震荡 + 价格突破 + 成交量突破
-        data[self.get_key()] = (((data['close'] - data['period_price_max'])/data['period_price_max']) * ((data['volume'] - data['period_volume_max']))/data['period_volume_max'])/(data['period_price_width'] * data['period_volume_width'])
+        data[self.get_key()] = data['period_price_breakthrough_amp'] * data['period_volume_breakthrough_amp']/(data['period_price_width'] * data['period_volume_width'])
+        data = data.dropna()
         if create_signal:
-            data[self.get_signal()] = data[[self.get_key()]].apply(lambda item: self.get_action_mapping(item))
+            data[self.get_signal()] = data[self.get_key()].apply(lambda item: self.get_action_mapping(item))
         return data
     
     def get_action_mapping(self, item):
@@ -181,7 +184,7 @@ class Launch(CombinedParamFactor):
         
     
 '''
-启动因子
+RSI金叉
 '''
 class RSIGoldenCross(CombinedParamFactor):
 
@@ -196,7 +199,7 @@ class RSIGoldenCross(CombinedParamFactor):
         data = self._indicator.enrich(data)
         data[self.get_key()] = data[self._indicator.get_key(self._params[0])] - data[self._indicator.get_key(self._params[1])]
         if create_signal:
-            data[self.get_signal()] = data[[self.get_key()]].rolling(2).apply(lambda item: self.get_action_mapping(item))
+            data[self.get_signal()] = data[self.get_key()].rolling(2).apply(lambda item: self.get_action_mapping(item))
         return data
     
     def get_action_mapping(self, item):

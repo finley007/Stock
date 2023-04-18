@@ -3,7 +3,7 @@
 
 import pandas as pd
 import time
-from factor.base_factor import CombinationFactor, Factor
+from factor.base_factor import CombinationFactor, CombinedParamFactor, Factor
 import os
 import uuid
 import numpy as np
@@ -133,7 +133,7 @@ def run_factor_analysis(package, factor_case_exp, filters, ts_code = ''):
         stock_list = list(map(lambda item:item[0], stock_list))
         for stock in stock_list:
             data = FileUtils.get_file_by_ts_code(stock, is_reversion = True)
-            if (len(data) > 0 and len(filter_list) > 0 and filter_stock(filter_list, data)):
+            if (len(data) > 0 and (len(filter_list) == 0 or filter_stock(filter_list, data))):
                 filter_stock_list.append(stock)
     else:
         stock_list = persistence.select("select ts_code from static_stock_list where ts_code = '" + ts_code + "'")
@@ -158,6 +158,42 @@ def run_factor_analysis(package, factor_case_exp, filters, ts_code = ''):
         distribution_result = DistributionResult(0, factor_analysis.get_id(), result[0], path)
         session.add(distribution_result)
         session.commit()
+
+def analysis_context_by_value(package, factor_case_exp, filters,  value, param = '', ts_code = ''):
+    """
+    给定因子值获取对应的股票和时间
+    """
+    persistence = DaoMysqlImpl()
+    session = create_session()
+    factor_case = parse_factor_case(factor_case_exp)
+    factor = create_instance(package, factor_case[0], to_params(factor_case[2]))
+    filter_stock_list = []
+    if ts_code == '':
+        filter_list = create_filter_list(filters)
+        stock_list = persistence.select("select ts_code from static_stock_list")
+        stock_list = list(map(lambda item:item[0], stock_list))
+        for stock in stock_list:
+            data = FileUtils.get_file_by_ts_code(stock, is_reversion = True)
+            if (len(data) > 0 and (len(filter_list) > 0 or filter_stock(filter_list, data))):
+                filter_stock_list.append(stock)
+    else:
+        stock_list = persistence.select("select ts_code from static_stock_list where ts_code = '" + ts_code + "'")
+        filter_stock_list = list(map(lambda item:item[0], stock_list))
+    context_list = []
+    for stock in filter_stock_list:
+        data = FileUtils.get_file_by_ts_code(stock)
+        data = factor.caculate(data)
+        if isinstance(factor, CombinedParamFactor):
+            values = np.array( data[factor.get_key()].tolist())
+            index = np.where(values == value)
+        else:
+            values = np.array( data[factor.get_key(param)].tolist())
+            print(value)
+            index = np.where(values == value)
+        if len(index[0]) > 0:
+            context_list.append((stock, data.iloc[index[0]]['trade_date']))
+    return context_list
+
     
 @run_with_timecost    
 def run_factor_ret_distribution_analysis(package, factor_case_exp, filters='', ts_code = ''):
@@ -353,7 +389,7 @@ def run_combination_factor_ret_distribution_analysis(combination_id, filters='',
         
         
 if __name__ == '__main__':
-    # pre_check()
+    pre_check()
     # 相关性分析
     # factor = OBVTrend([0])
     # do_correlation_analysis(factor)
@@ -366,6 +402,9 @@ if __name__ == '__main__':
     # run_factor_analysis('factor.momentum_factor', 'DiscreteIndex_v1.0_10|40___', '')
     # run_factor_analysis('factor.momentum_factor', 'MACDPenetration_v1.0_12|16|9___', '')
     # run_factor_analysis('factor.my_factor', 'RSIGoldenCross_v1.0_7|14___', '')
+    # run_factor_analysis('factor.my_factor', 'Launch_v1.0_30___', '')
+    # 获取数值点
+    # print(analysis_context_by_value('factor.my_factor', 'Launch_v1.0_30___', '', 7.30133))
     # 因子收益率分布分析
     # run_factor_ret_distribution_analysis('factor.my_factor', 'RisingTrend_v1.0_5|10_0.8|0.7__', '')
     # run_factor_ret_distribution_analysis('factor.my_factor', 'FallingTrend_v1.0_10|15|20_0.9|0.8|0.7__', '')
@@ -382,7 +421,7 @@ if __name__ == '__main__':
     # run_factor_ret_distribution_analysis('factor.momentum_factor', 'UOPenetration_v1.0_7|14|28__', '', '')
     # run_factor_ret_distribution_analysis('factor.momentum_factor', 'RVIPenetration_v1.0_10__', '', '')
     # run_factor_ret_distribution_analysis('factor.momentum_factor', 'SOPenetration_v1.0_10__', '', '')
-    run_factor_ret_distribution_analysis('factor.analysis_factor', 'LimitUp_v1.0_1__', '', '')
+    # run_factor_ret_distribution_analysis('factor.analysis_factor', 'LimitUp_v1.0_1__', '', '')
     # 复合因子收益率分析
     # run_combination_factor_ret_distribution_analysis('combination2')
     # # 参数调优

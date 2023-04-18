@@ -83,7 +83,7 @@ class DiscreteIndex(CombinedParamFactor):
         data[self.get_high_value_key()] = data[indicator.get_high_value_key()]
         data[self.get_key()] = data[self.get_middle_value_key()] - data[self.get_high_value_key()]
         if create_signal:
-            data[self.get_signal()] = data[[self.get_key()]].rolling(2).apply(lambda item: self.get_action_mapping(item))
+            data[self.get_signal()] = data[self.get_key()].rolling(2).apply(lambda item: self.get_action_mapping(item))
         return data  
     
     def get_action_mapping(self, item):
@@ -120,7 +120,7 @@ class MACDPenetration(CombinedParamFactor):
         data[self.get_key()] = data[indicator.get_key()]
         data[MACDPenetration.factor_code] = 0
         if create_signal:
-            data['cross'] = data[[self.get_key()]].rolling(2).apply(lambda item: self.get_action_mapping(item))
+            data['cross'] = data[self.get_key()].rolling(2).apply(lambda item: self.get_action_mapping(item))
             data[self.get_signal()] = 0
             # 零上金叉开仓
             data.loc[(data['cross'] == 1) & (data['DIFF'] > 0) & (data['DEA'] > 0), self.get_signal()] = 1
@@ -156,7 +156,7 @@ class RSIRegression(Factor):
         for param in self._params: 
             data[self.get_key(param)] = data[indicator.get_key(param)]
             if create_signal:
-                data[self.get_signal(param)] = data[[self.get_key(param)]].rolling(2).apply(lambda item: self.get_action_mapping(param, item))
+                data[self.get_signal(param)] = data[self.get_key(param)].rolling(2).apply(lambda item: self.get_action_mapping(param, item))
         return data 
     
     def get_action_mapping(self, param, item):
@@ -189,7 +189,7 @@ class DRFRegression(Factor):
         for param in self._params: 
             data[self.get_key(param)] = data[indicator.get_key(param)]
             if create_signal:
-                data[self.get_signal(param)] = data[[self.get_key(param)]].rolling(2).apply(lambda item: self.get_action_mapping(param, item))
+                data[self.get_signal(param)] = data[self.get_key(param)].rolling(2).apply(lambda item: self.get_action_mapping(param, item))
         return data 
 
     def get_action_mapping(self, param, item):
@@ -219,7 +219,7 @@ class KDJRegression(Factor):
         for param in self._params: 
             data[self.get_key(param)] = data[indicator.get_d(param)]
             if create_signal:
-                data[self.get_signal(param)] = data[[self.get_key(param)]].rolling(2).apply(lambda item: self.get_action_mapping(param, item))
+                data[self.get_signal(param)] = data[self.get_key(param)].rolling(2).apply(lambda item: self.get_action_mapping(param, item))
         return data 
     
     def obtain_visual_monitoring_parameters(self):
@@ -283,7 +283,7 @@ class UOPenetration(CombinedParamFactor):
         data = indicator.enrich(data)
         data[self.get_key()] = data[indicator.get_key()]
         if create_signal:
-            data[self.get_signal()] = data[[self.get_key()]].rolling(2).apply(lambda item: self.get_action_mapping(item))
+            data[self.get_signal()] = data[self.get_key()].rolling(2).apply(lambda item: self.get_action_mapping(item))
         return data 
 
     def get_action_mapping(self, item):
@@ -314,7 +314,7 @@ class RVIPenetration(Factor):
         for param in self._params:
             data[self.get_key(param)] = data[indicator.get_key(param)] - data[indicator.get_rvis(param)]
             if create_signal:
-                data[self.get_signal(param)] = data[[self.get_key(param)]].rolling(2).apply(lambda item: self.get_action_mapping(param, item))
+                data[self.get_signal(param)] = data[self.get_key(param)].rolling(2).apply(lambda item: self.get_action_mapping(param, item))
         return data
 
     def get_action_mapping(self, param, item):
@@ -343,7 +343,7 @@ class SOPenetration(Factor):
         for param in self._params:
             data[self.get_key(param)] = data[indicator.get_key(param)]
             if create_signal:
-                data[self.get_signal(param)] = data[[self.get_key(param)]].rolling(2).apply(lambda item: self.get_action_mapping(param, item))
+                data[self.get_signal(param)] = data[self.get_key(param)].rolling(2).apply(lambda item: self.get_action_mapping(param, item))
         return data
 
     def get_action_mapping(self, param, item):
