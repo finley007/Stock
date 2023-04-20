@@ -95,5 +95,5 @@ if __name__ == '__main__':
     # test_traversal_array()
     # test_list_2_string()
     # test_circular_backtracking()
-    test_parse_str()
-    # test_set()
+    # test_parse_str()
+    test_set()

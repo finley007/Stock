@@ -184,11 +184,10 @@ def analysis_context_by_value(package, factor_case_exp, filters,  value, param =
         data = FileUtils.get_file_by_ts_code(stock)
         data = factor.caculate(data)
         if isinstance(factor, CombinedParamFactor):
-            values = np.array( data[factor.get_key()].tolist())
+            values = data[factor.get_key()].values
             index = np.where(values == value)
         else:
-            values = np.array( data[factor.get_key(param)].tolist())
-            print(value)
+            values = data[factor.get_key(param)].values
             index = np.where(values == value)
         if len(index[0]) > 0:
             context_list.append((stock, data.iloc[index[0]]['trade_date']))
@@ -404,7 +403,7 @@ if __name__ == '__main__':
     # run_factor_analysis('factor.my_factor', 'RSIGoldenCross_v1.0_7|14___', '')
     # run_factor_analysis('factor.my_factor', 'Launch_v1.0_30___', '')
     # 获取数值点
-    # print(analysis_context_by_value('factor.my_factor', 'Launch_v1.0_30___', '', 7.30133))
+    print(analysis_context_by_value('factor.my_factor', 'Launch_v1.0_30___', '', 7.30133))
     # 因子收益率分布分析
     # run_factor_ret_distribution_analysis('factor.my_factor', 'RisingTrend_v1.0_5|10_0.8|0.7__', '')
     # run_factor_ret_distribution_analysis('factor.my_factor', 'FallingTrend_v1.0_10|15|20_0.9|0.8|0.7__', '')
