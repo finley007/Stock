@@ -219,6 +219,7 @@ class CombinedParamFactor(Factor):
             stock_list = persistence.get_stock_list()
         pagination = Pagination(stock_list, page_size=50)
         runner = ProcessRunner(10)
+        # 分页计算每个股票的因子值
         while pagination.has_next():
             sub_list = pagination.next()
             runner.execute(self.get_factor_value_list, args = (sub_list, start_date, end_date))
@@ -252,6 +253,8 @@ class CombinedParamFactor(Factor):
         """
         计算因子值，为了多进程并行计算
         """
+        result = pd.DataFrame()
+        data_list = []
         for stock in sub_list:
             print('Handle stock: ' + stock)
             data = FileUtils.get_file_by_ts_code(stock)
@@ -261,7 +264,9 @@ class CombinedParamFactor(Factor):
                 data = data[data['date'] >= start_date]
             if end_date != '':
                 data = data[data['date'] <= start_date]
-        return data[self.get_key()].tolist()
+            data_list.append(data)
+        result = pd.concat(data_list)
+        return result[self.get_key()].tolist()
 
 class CombinationFactor(Factor):
     

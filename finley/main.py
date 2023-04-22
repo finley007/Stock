@@ -7,6 +7,7 @@ from factor.base_factor import CombinationFactor, CombinedParamFactor, Factor
 import os
 import uuid
 import numpy as np
+import heapq
 
 from factor.my_factor import LowerHatch, RSIGoldenCross
 from factor.trend_factor import MeanInflectionPoint, MeanTrend, MeanPenetration, MeanTrendFirstDiff, MultipleMeanPenetration
@@ -20,7 +21,7 @@ from synchronization import incremental_synchronize_stock_daily_data, synchroniz
 from simulator import StockSimulator, FutrueSimulator 
 from machinelearning import MachineLearn, CompoundFactor, TrainingModel
 from log import log_info
-from tools import run_with_timecost, create_instance, to_params, date_to_time
+from tools import approximately_equal_to, run_with_timecost, create_instance, to_params, date_to_time
 from validator import validate_data_integrity
 import constants
 
@@ -127,6 +128,7 @@ def run_factor_analysis(package, factor_case_exp, filters, ts_code = ''):
     factor_case = parse_factor_case(factor_case_exp)
     factor = create_instance(package, factor_case[0], to_params(factor_case[2]))
     filter_stock_list = []
+    # 获取股票分析对象列表
     if ts_code == '':
         filter_list = create_filter_list(filters)
         stock_list = persistence.select("select ts_code from static_stock_list")
@@ -138,6 +140,7 @@ def run_factor_analysis(package, factor_case_exp, filters, ts_code = ''):
     else:
         stock_list = persistence.select("select ts_code from static_stock_list where ts_code = '" + ts_code + "'")
         filter_stock_list = list(map(lambda item:item[0], stock_list))
+    #调用因子的analyze方法获取分析结果
     result = factor.analyze(filter_stock_list)
     if isinstance(factor.get_params(),list):
         for param in factor.get_params():
@@ -158,6 +161,22 @@ def run_factor_analysis(package, factor_case_exp, filters, ts_code = ''):
         distribution_result = DistributionResult(0, factor_analysis.get_id(), result[0], path)
         session.add(distribution_result)
         session.commit()
+
+def show_factor_analysis_result(analysis_id, top_count = 10):
+    persistence = DaoMysqlImpl()
+    file_path = persistence.select("select file_path from distribution_result where related_id = '" + analysis_id + "'")
+    data = FileUtils.load(file_path[0][0])
+    data.sort(reverse=True)
+    print(data)
+    print(len(data))
+    data = list(set(data))
+    print(len(data))
+    top_n = heapq.nlargest(top_count, data)
+    last_n = heapq.nsmallest(top_count, data)
+    
+    print("Top {0}: {1}".format(str(top_count), top_n))
+    print("Last {0}: {1}".format(str(top_count), last_n))
+
 
 def analysis_context_by_value(package, factor_case_exp, filters,  value, param = '', ts_code = ''):
     """
@@ -185,11 +204,10 @@ def analysis_context_by_value(package, factor_case_exp, filters,  value, param =
         data = factor.caculate(data)
         if isinstance(factor, CombinedParamFactor):
             values = np.array( data[factor.get_key()].tolist())
-            index = np.where(values == value)
+            index = np.where(list(map(lambda val: approximately_equal_to(val, value, 0.00001), values)))
         else:
             values = np.array( data[factor.get_key(param)].tolist())
-            print(value)
-            index = np.where(values == value)
+            index = np.where(list(map(lambda val: approximately_equal_to(val, value, 0.00001), values)))
         if len(index[0]) > 0:
             context_list.append((stock, data.iloc[index[0]]['trade_date']))
     return context_list
@@ -389,7 +407,7 @@ def run_combination_factor_ret_distribution_analysis(combination_id, filters='',
         
         
 if __name__ == '__main__':
-    pre_check()
+    # pre_check()
     # 相关性分析
     # factor = OBVTrend([0])
     # do_correlation_analysis(factor)
@@ -402,9 +420,11 @@ if __name__ == '__main__':
     # run_factor_analysis('factor.momentum_factor', 'DiscreteIndex_v1.0_10|40___', '')
     # run_factor_analysis('factor.momentum_factor', 'MACDPenetration_v1.0_12|16|9___', '')
     # run_factor_analysis('factor.my_factor', 'RSIGoldenCross_v1.0_7|14___', '')
-    # run_factor_analysis('factor.my_factor', 'Launch_v1.0_30___', '')
+    run_factor_analysis('factor.my_factor', 'Launch_v1.0_30___', '')
+    # 展示分析结果
+    # print(show_factor_analysis_result('797863ddfc794c8d8743a3e1e77b5748'))
     # 获取数值点
-    # print(analysis_context_by_value('factor.my_factor', 'Launch_v1.0_30___', '', 7.30133))
+    # print(analysis_context_by_value('factor.my_factor', 'Launch_v1.0_30___', '',  4.898039))
     # 因子收益率分布分析
     # run_factor_ret_distribution_analysis('factor.my_factor', 'RisingTrend_v1.0_5|10_0.8|0.7__', '')
     # run_factor_ret_distribution_analysis('factor.my_factor', 'FallingTrend_v1.0_10|15|20_0.9|0.8|0.7__', '')
