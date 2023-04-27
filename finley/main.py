@@ -403,7 +403,7 @@ def run_combination_factor_ret_distribution_analysis(combination_id, filters='',
         
         
 if __name__ == '__main__':
-    pre_check()
+    # pre_check()
     # 相关性分析
     # factor = OBVTrend([0])
     # do_correlation_analysis(factor)
@@ -416,11 +416,15 @@ if __name__ == '__main__':
     # run_factor_analysis('factor.momentum_factor', 'DiscreteIndex_v1.0_10|40___', '')
     # run_factor_analysis('factor.momentum_factor', 'MACDPenetration_v1.0_12|16|9___', '')
     # run_factor_analysis('factor.my_factor', 'RSIGoldenCross_v1.0_7|14___', '')
+<<<<<<< HEAD
     # run_factor_analysis('factor.my_factor', 'Launch_v1.0_30___', '')
+=======
+    run_factor_analysis('factor.my_factor', 'Launch_v1.0_30___', '')
+>>>>>>> a9472ce94bcecde0d0a725a77fffcbed63eb2cd6
     # 展示分析结果
     # print(show_factor_analysis_result('797863ddfc794c8d8743a3e1e77b5748'))
     # 获取数值点
-    # print(analysis_context_by_value('factor.my_factor', 'Launch_v1.0_30___', '', 7.30133))
+    # print(analysis_context_by_value('factor.my_factor', 'Launch_v1.0_30___', '',  4.898039))
     # 因子收益率分布分析
     # run_factor_ret_distribution_analysis('factor.my_factor', 'RisingTrend_v1.0_5|10_0.8|0.7__', '')
     # run_factor_ret_distribution_analysis('factor.my_factor', 'FallingTrend_v1.0_10|15|20_0.9|0.8|0.7__', '')
