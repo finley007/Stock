@@ -416,11 +416,8 @@ if __name__ == '__main__':
     # run_factor_analysis('factor.momentum_factor', 'DiscreteIndex_v1.0_10|40___', '')
     # run_factor_analysis('factor.momentum_factor', 'MACDPenetration_v1.0_12|16|9___', '')
     # run_factor_analysis('factor.my_factor', 'RSIGoldenCross_v1.0_7|14___', '')
-<<<<<<< HEAD
     # run_factor_analysis('factor.my_factor', 'Launch_v1.0_30___', '')
-=======
     run_factor_analysis('factor.my_factor', 'Launch_v1.0_30___', '')
->>>>>>> a9472ce94bcecde0d0a725a77fffcbed63eb2cd6
     # 展示分析结果
     # print(show_factor_analysis_result('797863ddfc794c8d8743a3e1e77b5748'))
     # 获取数值点
