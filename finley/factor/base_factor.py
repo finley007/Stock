@@ -192,7 +192,7 @@ class Factor(metaclass = ABCMeta):
 
 class CombinedParamFactor(Factor):
     """
-    组合参数因子，多个参数共同组合起来使用
+    组合参数因子，多个参数共同组合起来使用，比如RSI短周期长周期
     """
 
     def get_key(self):
@@ -219,9 +219,10 @@ class CombinedParamFactor(Factor):
             stock_list = persistence.get_stock_list()
         pagination = Pagination(stock_list, page_size=50)
         runner = ProcessRunner(10)
+        # 分页计算每个股票的因子值
         while pagination.has_next():
-            sub_list = pagination.next()
-            runner.execute(self.get_factor_value_list, args = (sub_list, start_date, end_date))
+            sub_stock_list = pagination.next()
+            runner.execute(self.get_factor_value_list, args = (sub_stock_list, start_date, end_date))
             results = runner.get_results()
             for result in results:
                 factor_value_list = factor_value_list + result.get()
@@ -252,6 +253,8 @@ class CombinedParamFactor(Factor):
         """
         计算因子值，为了多进程并行计算
         """
+        result = pd.DataFrame()
+        data_list = []
         for stock in sub_list:
             print('Handle stock: ' + stock)
             data = FileUtils.get_file_by_ts_code(stock)
@@ -261,9 +264,17 @@ class CombinedParamFactor(Factor):
                 data = data[data['date'] >= start_date]
             if end_date != '':
                 data = data[data['date'] <= start_date]
-        return data[self.get_key()].tolist()
+            data_list.append(data)
+        result = pd.concat(data_list)
+        return result[self.get_key()].tolist()
 
 class CombinationFactor(Factor):
+    """
+    组合因子，多个因子产生交易信号，取与
+    factor_list 组合因子列表
+    factor_code 因子编码
+    params_mapping 因子对应的参数
+    """
     
     def __init__(self, factor_code, factor_list, params_mapping={}):
         self._factor_list = factor_list
