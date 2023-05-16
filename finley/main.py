@@ -8,8 +8,10 @@ import os
 import uuid
 import numpy as np
 import heapq
+import matplotlib.pyplot as plt
+import seaborn as sns
 
-from factor.my_factor import LowerHatch, RSIGoldenCross
+from factor.my_factor import Launch, LowerHatch, RSIGoldenCross
 from factor.trend_factor import MeanInflectionPoint, MeanTrend, MeanPenetration, MeanTrendFirstDiff, MultipleMeanPenetration
 from factor.momentum_factor import KDJRegression, MACDPenetration, RSIRegression, DRFRegression, SOPenetration
 from factor.volume_factor import MFIPenetration, OBVTrend, FIPenetration
@@ -163,11 +165,29 @@ def run_factor_analysis(package, factor_case_exp, filters, ts_code = ''):
         session.commit()
 
 def show_factor_analysis_result(analysis_id, top_count = 10):
+    """
+    打印分析结果，并获取极值
+    Parameters
+    ----------
+    analysis_id
+    top_count
+
+    Returns
+    -------
+
+    """
     persistence = DaoMysqlImpl()
     file_path = persistence.select("select file_path from distribution_result where related_id = '" + analysis_id + "'")
     data = FileUtils.load(file_path[0][0])
-    data.sort(reverse=True)
-    data = list(set(data))
+    print(len(data))
+    # print(data[:50000])
+    # data.sort(reverse=True)
+    # data = list(set(data))
+    # plt.hist(data, bins=20, density=True, alpha=0.5, color='b')
+    sns.histplot(data[:500000], bins=30, kde=True)
+    plt.title('Data Distribution')
+    plt.xlabel('Value')
+    plt.ylabel('Frequency')
     top_n = heapq.nlargest(top_count, data)
     last_n = heapq.nsmallest(top_count, data)
     print("Top {0}: {1}".format(str(top_count), top_n))
@@ -400,10 +420,16 @@ def run_combination_factor_ret_distribution_analysis(combination_id, filters='',
     factor_ret_distribution = FactorRetDistribution(combination_id, filters, ret_id, '')
     session.add(factor_ret_distribution)
     session.commit()
-        
+
+def get_factor_value_by_stock_date(package, factor_case_exp, ts_code, date):
+    factor_case = parse_factor_case(factor_case_exp)
+    factor = create_instance(package, factor_case[0], to_params(factor_case[2]))
+    data = FileUtils.get_file_by_ts_code(ts_code, is_reversion = True)
+    data = factor.caculate(data)
+    return data[data['trade_date'] == date][factor.get_keys()]
         
 if __name__ == '__main__':
-    # pre_check()
+    pre_check()
     # 相关性分析
     # factor = OBVTrend([0])
     # do_correlation_analysis(factor)
@@ -417,11 +443,16 @@ if __name__ == '__main__':
     # run_factor_analysis('factor.momentum_factor', 'MACDPenetration_v1.0_12|16|9___', '')
     # run_factor_analysis('factor.my_factor', 'RSIGoldenCross_v1.0_7|14___', '')
     # run_factor_analysis('factor.my_factor', 'Launch_v1.0_30___', '')
-    run_factor_analysis('factor.my_factor', 'Launch_v1.0_30___', '')
+    # run_factor_analysis('factor.my_factor', 'Launch_v1.0_30___', '')
     # 展示分析结果
-    # print(show_factor_analysis_result('797863ddfc794c8d8743a3e1e77b5748'))
+    # print(show_factor_analysis_result('adbee51afdd547108cfcf65233125204'))
     # 获取数值点
-    # print(analysis_context_by_value('factor.my_factor', 'Launch_v1.0_30___', '',  4.898039))
+    # print(analysis_context_by_value('factor.my_factor', 'Launch_v1.0_30___', '',  15.186667372055723))
+    #Top 10: [166.0282783063327, 161.2415334085539, 81.08989573040311, 34.6487432858264, 31.52956777531548, 27.088499397738904, 19.242704568315272, 15.63689299461265, 15.561720107184613, 15.186667372055723]
+    # 给定股票和日期，获得当天的因子值
+    # print(get_factor_value_by_stock_date('factor.my_factor', 'Launch_v1.0_30___', '601360.SH', '20230221'))
+    # print(get_factor_value_by_stock_date('factor.my_factor', 'Launch_v1.0_30___', '600928.SH', '20230508'))
+    # print(get_factor_value_by_stock_date('factor.my_factor', 'Launch_v1.0_30___', '002322.SZ', '20230515'))
     # 因子收益率分布分析
     # run_factor_ret_distribution_analysis('factor.my_factor', 'RisingTrend_v1.0_5|10_0.8|0.7__', '')
     # run_factor_ret_distribution_analysis('factor.my_factor', 'FallingTrend_v1.0_10|15|20_0.9|0.8|0.7__', '')
@@ -439,6 +470,7 @@ if __name__ == '__main__':
     # run_factor_ret_distribution_analysis('factor.momentum_factor', 'RVIPenetration_v1.0_10__', '', '')
     # run_factor_ret_distribution_analysis('factor.momentum_factor', 'SOPenetration_v1.0_10__', '', '')
     # run_factor_ret_distribution_analysis('factor.analysis_factor', 'LimitUp_v1.0_1__', '', '')
+    # run_factor_ret_distribution_analysis('factor.my_factor', 'Launch_v1.0_30___', '', '')
     # 复合因子收益率分析
     # run_combination_factor_ret_distribution_analysis('combination2')
     # # 参数调优
@@ -464,6 +496,8 @@ if __name__ == '__main__':
     # factor = MeanTrendFirstDiff([10])
     # factor = FIPenetration([26])
     # factor = MultipleMeanPenetration([10, 20])
+    # factor = MultipleMeanPenetration([10, 20])
+    # factor = Launch([40])
     # data = select_stock([factor])
     # 复盘
     # factor1 = KDJRegression([9])

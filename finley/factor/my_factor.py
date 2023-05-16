@@ -153,6 +153,8 @@ class Launch(CombinedParamFactor):
         data['period_volume_breakthrough_amp'] = (data['vol'] - data['period_volume_max'])/data['period_volume_max']
         # 窄幅震荡 + 成交量窄幅震荡 + 价格突破 + 成交量突破
         data[self.get_key()] = data['period_price_breakthrough_amp'] * data['period_volume_breakthrough_amp']/(data['period_price_width'] * data['period_volume_width'])
+        data.loc[(data['period_price_breakthrough_amp'] < 0) & (data['period_volume_breakthrough_amp'] < 0), self.get_key()] \
+            = - data['period_price_breakthrough_amp'] * data['period_volume_breakthrough_amp'] / (data['period_price_width'] * data['period_volume_width'])
         data = data.dropna()
         if create_signal:
             data[self.get_signal()] = data[self.get_key()].apply(lambda item: self.get_action_mapping(item))
@@ -162,7 +164,7 @@ class Launch(CombinedParamFactor):
         """
         只做多不做空
         """
-        if item > 0:
+        if item > 0.1:
             return 1
         else:
             return 0 
@@ -174,14 +176,11 @@ class Launch(CombinedParamFactor):
         data = self.caculate(data)
         score = 0
         scores = [1, 4, 9, 16, 25]
-        signals = data[factor.get_signal()].tolist()
+        signals = data[self.get_signal()].tolist()
         if len(signals) >= 5:
             score = np.dot(scores, signals[-5:])
         return score
     
-    def get_indicator(self):
-        return self._indicator
-        
     
 '''
 RSI金叉
@@ -253,13 +252,13 @@ if __name__ == '__main__':
     # draw_histogram(ret_list, bin_num=100)
     
     #图像分析
-    data = FileUtils.get_file_by_ts_code('688023.SH', is_reversion = True)
-    factor = RSIGoldenCross([7,14])
-    data = factor.caculate(data)
-    data['index_trade_date'] = pd.to_datetime(data['trade_date'])
-    data = data.set_index(['index_trade_date'])
-    draw_analysis_curve(data[(data['trade_date'] > '20230315')], volume = False, show_signal = True, signal_keys = [factor.get_key(), factor.get_indicator().get_key(7)])
-    print('aa')
+    # data = FileUtils.get_file_by_ts_code('688023.SH', is_reversion = True)
+    # factor = RSIGoldenCross([7,14])
+    # data = factor.caculate(data)
+    # data['index_trade_date'] = pd.to_datetime(data['trade_date'])
+    # data = data.set_index(['index_trade_date'])
+    # draw_analysis_curve(data[(data['trade_date'] > '20230315')], volume = False, show_signal = True, signal_keys = [factor.get_key(), factor.get_indicator().get_key(7)])
+    # print('aa')
     
     #模拟
     # data = FileUtils.get_file_by_ts_code('002454.SZ', is_reversion = False)
@@ -291,3 +290,8 @@ if __name__ == '__main__':
     # data = factor.caculate_concat(data_list)
     # print(len(data))
     # print(data)
+
+    # 因子得分
+    factor = Launch([30])
+    data = FileUtils.get_file_by_ts_code('688035.SH', True)
+    print(factor.score(data))
